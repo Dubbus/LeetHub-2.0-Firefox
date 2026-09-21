@@ -127,42 +127,36 @@ BrowserUtil.instance.storage.local.get('leethub_token', data => {
   }
 });
 
-/* Interview tracker settings */
-const trackerStatus = (text, ok) =>
-  $('#tracker_status')
-    .text(text)
-    .css('color', ok ? '#5cb85c' : '#d9534f');
-
-const showTrackerSheet = url => {
-  $('#tracker_sheet_link').attr('href', url);
-  $('#tracker_sheet').show();
-  trackerStatus('Connected ✓', true);
+/* Interview tracker */
+const todayLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`;
 };
 
-$('#tracker_redirect').text(BrowserUtil.instance.identity.getRedirectURL());
+BrowserUtil.instance.storage.local.get(['tracker_enabled', 'tracker_reviews'], data => {
+  $('#tracker_enabled').prop('checked', data.tracker_enabled !== false);
 
-BrowserUtil.instance.storage.local.get(['tracker_client_id', 'tracker_sheet_url'], data => {
-  $('#tracker_client_id').val(data.tracker_client_id || '');
-  if (data.tracker_sheet_url) showTrackerSheet(data.tracker_sheet_url);
-});
-
-$('#tracker_connect').on('click', async () => {
-  const clientId = $('#tracker_client_id').val().trim();
-  if (!clientId) {
-    trackerStatus('Enter the client ID first.', false);
-    return;
+  // Cached schedule is filtered by today's date here, so it never goes stale between LeetCode visits.
+  const today = todayLocal();
+  const due = (data.tracker_reviews || []).filter(r => r.next <= today);
+  const list = $('#tracker_due').empty();
+  if (due.length === 0) {
+    list.append($('<li>').text('Nothing due 🎉'));
   }
-  await BrowserUtil.instance.storage.local.set({ tracker_client_id: clientId });
-  trackerStatus('Waiting for Google sign-in…', true);
-  const res = await BrowserUtil.instance.runtime.sendMessage({ type: 'TRACKER_CONNECT' });
-  if (res && res.ok) showTrackerSheet(res.sheetUrl);
-  else trackerStatus((res && res.error) || 'Failed', false);
+  due.forEach(r => {
+    const label = r.lc ? `${r.lc}. ${r.name}` : r.name;
+    const link = r.url ? $('<a target="_blank" rel="noopener">').attr('href', r.url) : $('<span>');
+    list.append(
+      $('<li style="margin: 2px 0">').append(
+        link.text(label).css('color', 'cadetblue'),
+        $('<span>').text(` · box ${r.box} · due ${r.next}`).css('color', '#777')
+      )
+    );
+  });
 });
 
-$('#tracker_new').on('click', async e => {
-  e.preventDefault();
-  trackerStatus('Creating sheet…', true);
-  const res = await BrowserUtil.instance.runtime.sendMessage({ type: 'TRACKER_NEW_SHEET' });
-  if (res && res.ok) showTrackerSheet(res.sheetUrl);
-  else trackerStatus((res && res.error) || 'Failed', false);
+$('#tracker_enabled').on('change', e => {
+  BrowserUtil.instance.storage.local.set({ tracker_enabled: e.target.checked });
 });

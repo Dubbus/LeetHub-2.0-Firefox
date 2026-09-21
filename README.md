@@ -91,15 +91,16 @@ npm run lint-test     Test all code is linted properly
 
 ## Interview tracker (fork addition)
 
-Timer + notes form that appends a row to a Google Sheet the extension creates for you.
+A timer and a notes form for interview prep. Each attempt is appended to `interview_tracker.csv` in your LeetHub
+GitHub repo, using the GitHub sign-in LeetHub already has. No extra setup.
 
-One-time setup:
-1. [Google Cloud Console](https://console.cloud.google.com) → new project → enable the **Google Sheets API**.
-2. OAuth consent screen: External, status *Testing*, add your Google account as a test user.
-3. Credentials → Create OAuth client ID → **Web application**. Under *Authorized redirect URIs* add the
-   URI shown in the extension popup ("Redirect URI to allow").
-4. Paste the client ID into the popup and click **Connect Google**. A sheet named `interview_prep_tracker` is created.
+- On a LeetCode problem, use the floating widget: **Start initial approach** → **Stop & start solving** → submit.
+- When the submission is accepted, a form opens pre-filled (problem, difficulty, pattern, times, Leitner box).
+  Fill in the rest and save. **Log without solving** records a Failed/Partial attempt.
+- The popup lists problems **due for review** using Leitner intervals (box 1-5 → 2/4/8/16/30 days).
+- Toggle the tracker off in the popup.
 
-Usage: on a LeetCode problem use the floating widget: **Start initial approach** → **Stop & start solving** → submit.
-When the submission is accepted a notes form opens; saving appends a row. Columns are matched by header name in
-row 1, so you can rename/reorder/add columns in the sheet. If not connected, the timer still works but no form is shown.
+### Getting the data into the workbook
+Columns follow the workbook's *Problem Tracker* tab (A-P, then Notes), skipping its formula columns so a paste never
+overwrites them: open the CSV, paste the first 16 data columns into `A:P` and *Notes / Takeaway* into `U`. The
+trailing *LeetCode Link* column is extra and can be ignored.

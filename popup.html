@@ -109,22 +109,16 @@
         </div>
       </div>
 
-      <!-- Interview tracker settings -->
+      <!-- Interview tracker -->
       <div id="tracker_settings" class="sixteen wide column">
-        <div class="ui small header">Interview tracker (Google Sheet)</div>
-        <div class="ui small fluid input">
-          <input id="tracker_client_id" type="text" placeholder="Google OAuth client ID" />
-        </div>
-        <p style="font-size: 11px; margin: 6px 0 0">
-          Redirect URI to allow:<br /><code id="tracker_redirect" style="word-break: break-all"></code>
-        </p>
-        <button id="tracker_connect" type="button" class="ui small secondary button" style="margin-top: 6px">
-          Connect Google
-        </button>
-        <p id="tracker_status" style="margin: 6px 0 0"></p>
-        <p id="tracker_sheet" hidden style="margin: 6px 0 0">
-          <a id="tracker_sheet_link" target="_blank" style="color: cadetblue !important">Open sheet</a>
-          &middot; <a id="tracker_new" href="#" style="color: cadetblue !important">New sheet</a>
+        <div class="ui small header">Interview tracker</div>
+        <label style="font-size: 12px">
+          <input id="tracker_enabled" type="checkbox" checked /> Timer &amp; notes form on LeetCode
+        </label>
+        <div class="ui small header" style="margin-top: 10px">Due for review</div>
+        <ul id="tracker_due" style="list-style: none; padding: 0; margin: 0; font-size: 12px"></ul>
+        <p style="font-size: 11px; color: #777; margin: 6px 0 0">
+          Logged to <code>interview_tracker.csv</code> in your LeetHub repo. Updates when you visit LeetCode.
         </p>
       </div>
 

@@ -45,12 +45,6 @@ function handleMessage(request, sender, sendResponse) {
       }),
       { url: [{ hostSuffix: 'leetcode.com' }, { pathContains: 'submissions' }] }
     );
-  } else if (request.type === 'TRACKER_APPEND') {
-    appendToTracker(request.payload).then(sendResponse);
-  } else if (request.type === 'TRACKER_CONNECT') {
-    connectTracker().then(sendResponse);
-  } else if (request.type === 'TRACKER_NEW_SHEET') {
-    newTrackerSheet().then(sendResponse);
   }
   return true;
 }

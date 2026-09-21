@@ -297,4 +297,12 @@ async function uploadOnAcceptedSubmission(leetcode) {
   });
 }
 
-export { uploadOnAcceptedSubmission, uploadGitHubFile, decode_base64, encode_base64 };
+export {
+  uploadOnAcceptedSubmission,
+  uploadGitHubFile,
+  getGitHubFile,
+  createTreeAndCommit,
+  decode_base64,
+  encode_base64,
+  encode,
+};
