@@ -447,7 +447,7 @@ export function referenceView() {
       ['Box', 'Meaning', 'Days until next review'],
       guide.leitner.map(l => h('tr', {}, h('td', { textContent: l.box }), h('td', { textContent: l.meaning }), h('td', { textContent: INTERVAL_DAYS[l.box] ?? l.days })))
     ),
-    h('p', { class: 'muted', textContent: guide.rule }),
+    h('p', { class: 'muted' }, guide.rule, ' ', link('Leitner system on Wikipedia ↗', 'https://en.wikipedia.org/wiki/Leitner_system')),
 
     h('h2', { textContent: 'New vs. review mix by week' }),
     table(

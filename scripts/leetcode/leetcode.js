@@ -1,6 +1,6 @@
 import { LeetCodeV1, LeetCodeV2 } from './versions';
 import setupManualSubmitBtn from './submitBtn';
-import { initTrackerWidget, promptTrackerNotes } from './tracker';
+import { initTrackerWidget, promptTrackerNotes, trackUpload } from './tracker';
 import { debounce, isEmpty, LeetHubError, FILENAMES } from './util';
 import {
   uploadOnAcceptedSubmission,
@@ -80,13 +80,12 @@ function loader(leetCode, { manual = false } = {}) {
 
       // If successful, stop polling
       clearInterval(intervalId);
-      try {
-        await uploadOnAcceptedSubmission(leetCode);
-        leetCode.markUploaded();
-      } finally {
-        // Notes form is independent of the GitHub upload: show it even if the upload failed.
-        promptTrackerNotes(leetCode, { acceptedAt, manual });
-      }
+      // The notes form opens right away instead of waiting for the GitHub upload; saving waits for
+      // the upload (trackUpload) so the two commits can't race.
+      const upload = uploadOnAcceptedSubmission(leetCode).then(() => leetCode.markUploaded());
+      trackUpload(upload);
+      promptTrackerNotes(leetCode, { acceptedAt, manual });
+      await upload;
     } catch (err) {
       leetCode.markUploadFailed();
       clearInterval(intervalId);

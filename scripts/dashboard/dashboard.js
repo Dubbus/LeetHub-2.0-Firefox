@@ -136,11 +136,14 @@ function renderDates() {
   });
   planInput.dataset.role = 'plan';
 
+  // replaceChildren turns a null argument into the text "null", so only pass real nodes.
   $('dates').replaceChildren(
-    h('label', { class: simulated ? 'simulated' : '' }, 'Today', todayInput),
-    simulated ? h('span', { class: 'sim-note', textContent: 'simulated' }) : null,
-    simulated ? h('button', { textContent: 'Reset', title: 'Back to the real date', onclick: () => setTodayOverride('') }) : null,
-    h('label', {}, 'Plan start', planInput)
+    ...[
+      h('label', { class: simulated ? 'simulated' : '' }, 'Today', todayInput),
+      simulated ? h('span', { class: 'sim-note', textContent: 'simulated' }) : null,
+      simulated ? h('button', { textContent: 'Reset', title: 'Back to the real date', onclick: () => setTodayOverride('') }) : null,
+      h('label', {}, 'Plan start', planInput),
+    ].filter(Boolean)
   );
 }
 

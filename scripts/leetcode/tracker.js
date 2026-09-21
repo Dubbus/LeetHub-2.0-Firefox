@@ -16,6 +16,8 @@ import {
   suggestBox,
   makeKeyer,
   dueReviews,
+  nextReview,
+  INTERVAL_DAYS,
 } from './trackerCsv';
 import {
   getAuth,
@@ -24,12 +26,25 @@ import {
   refreshScheduleIfStale,
   PLAN_PROBLEMS,
 } from './trackerStore';
+import guide from '../dashboard/data/guide.json';
 
 const HOST_ID = 'lh-tracker-host';
 const TIMERS_KEY = 'tracker_timers';
 const TICK_MS = 1000;
 
 const PHASE = Object.freeze({ IDLE: 'idle', APPROACH: 'approach', SOLVING: 'solving' });
+
+const LEITNER_WIKI = 'https://en.wikipedia.org/wiki/Leitner_system';
+
+// While the form is open the widget shows this instant instead of the live clock.
+let frozenAt = null;
+
+// The GitHub upload of the solution (from leetcode.js). Saving a tracker row waits for it so the two
+// commits can't race on the branch ref.
+let pendingUpload = Promise.resolve();
+export function trackUpload(promise) {
+  pendingUpload = Promise.resolve(promise).catch(() => {});
+}
 
 const STYLE = `
   :host { all: initial; }
@@ -71,6 +86,11 @@ const STYLE = `
   .status { margin-top: 10px; min-height: 16px; }
   .status.error { color: #ff7b72; }
   .status.ok { color: #7ee787; }
+  .help { margin-top: 4px; color: #ccc; }
+  .help summary { cursor: pointer; color: #9ad; }
+  .help ul { margin: 6px 0; padding-left: 18px; }
+  .help p { margin: 6px 0; color: #aaa; }
+  .help a { color: #6cc4cc; }
 `;
 
 const api = () => BrowserUtil.instance;
@@ -153,8 +173,8 @@ function ensureUi() {
   const action = el('button');
   const logBtn = el('button', {
     className: 'secondary',
-    textContent: 'Log without solving',
-    title: 'Record a Failed/Partial attempt',
+    textContent: 'Log attempt',
+    title: 'Open the form: use it for a Failed/Partial attempt, or if it did not open after Accepted',
   });
   const reset = el('button', { className: 'secondary', textContent: 'Reset', title: 'Reset timer' });
   const widget = el('div', { className: 'widget', hidden: true }, label, time, action, logBtn, reset);
@@ -201,9 +221,17 @@ async function onResetClick() {
 async function onLogClick() {
   const slug = getSlug();
   if (!slug) return;
+  const now = Date.now();
   const timer = (await loadTimers())[slug] || { phase: PHASE.IDLE };
   const info = await getProblemInfo(slug, null);
-  showForm(slug, info, timings(timer, Date.now()), { status: 'Failed', manual: true });
+  // If the page is showing an Accepted result, treat it like the automatic prompt.
+  const result = document.querySelector('[data-e2e-locator="submission-result"]');
+  const accepted = /accepted/i.test((result && result.textContent) || '');
+  showForm(slug, info, timings(timer, now), {
+    status: accepted ? 'Solved' : 'Failed',
+    manual: !accepted,
+    freezeAt: now,
+  });
 }
 
 async function tick() {
@@ -216,9 +244,8 @@ async function tick() {
   widget.hidden = false;
 
   const timer = (await loadTimers())[slug] || { phase: PHASE.IDLE };
-  const now = Date.now();
+  const now = frozenAt === null ? Date.now() : frozenAt;
   const idle = timer.phase === PHASE.IDLE;
-  logBtn.hidden = idle;
   reset.hidden = idle;
 
   if (idle) {
@@ -302,6 +329,7 @@ export async function promptTrackerNotes(leetCode, { acceptedAt = Date.now(), ma
     const timer = (await loadTimers())[slug] || { phase: PHASE.IDLE };
     showForm(slug, await getProblemInfo(slug, leetCode), timings(timer, acceptedAt), {
       status: 'Solved',
+      freezeAt: acceptedAt,
     });
   } catch (err) {
     console.error('LeetHub tracker: could not open the form', err);
@@ -324,9 +352,10 @@ const inputEl = (value = '', placeholder = '') =>
 const field = (label, control, full = false) =>
   el('div', { className: full ? 'field full' : 'field' }, el('label', { textContent: label }), control);
 
-function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, manual = false }) {
+function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, manual = false, freezeAt = null }) {
   const { overlay } = ensureUi();
   if (!overlay.hidden) return; // already open
+  frozenAt = freezeAt; // stop the widget's clock while the form is open
 
   const date = inputEl(localDay());
   const lc = inputEl(info.lc);
@@ -366,8 +395,37 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
         attemptType: attemptType.value,
       })
     );
+    updateBoxHint();
   };
-  box.addEventListener('change', () => (boxTouched = true));
+  const boxHint = el('div', { className: 'meta' });
+  const updateBoxHint = () => {
+    const b = Number(box.value);
+    const info = guide.leitner.find(l => l.box === b);
+    const due = nextReview(date.value.trim(), b);
+    boxHint.textContent = info
+      ? `Box ${b}: ${info.meaning}. Next review in ${INTERVAL_DAYS[b]} days${due ? ` (${due})` : ''}.`
+      : '';
+  };
+  const boxHelp = el(
+    'details',
+    { className: 'help' },
+    el('summary', { textContent: 'How do Leitner boxes work?' }),
+    el(
+      'ul',
+      {},
+      ...guide.leitner.map(l =>
+        el('li', { textContent: `Box ${l.box} · review in ${INTERVAL_DAYS[l.box]} days · ${l.meaning}` })
+      )
+    ),
+    el('p', { textContent: guide.rule }),
+    el('a', { href: LEITNER_WIKI, target: '_blank', rel: 'noopener', textContent: 'Leitner system on Wikipedia ↗' })
+  );
+  box.addEventListener('change', () => {
+    boxTouched = true;
+    updateBoxHint();
+  });
+  date.addEventListener('input', updateBoxHint);
+  updateBoxHint();
   [status, hint, attemptType].forEach(c => c.addEventListener('change', recomputeBox));
   lc.addEventListener('input', recomputeBox);
   // If this problem is due for review, log it as a Review by default (one click to save).
@@ -389,6 +447,7 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
   const close = async () => {
     // Skipping an accepted submission (or finishing a save) ends that problem's timer.
     if (!manual || save.dataset.saved) await saveTimer(slug, null);
+    frozenAt = null;
     overlay.hidden = true;
     overlay.replaceChildren();
     tick();
@@ -428,6 +487,7 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
     try {
       const auth = await getAuth();
       if (!auth) throw new Error('Not signed in to GitHub through LeetHub');
+      await pendingUpload; // let LeetHub finish committing the solution first
       await appendAttempt(auth, row);
       save.dataset.saved = '1';
       statusLine.className = 'status ok';
@@ -477,6 +537,7 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
         field('Approach quality (1-5)', quality),
         field('Optimal complexity?', optimal),
         field('Leitner box (1-5)', box),
+        el('div', { className: 'field full' }, boxHint, boxHelp),
         field('Bugs / mistakes made', bugs, true),
         field('Notes / takeaway', notes, true)
       ),

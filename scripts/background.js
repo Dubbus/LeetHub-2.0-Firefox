@@ -37,14 +37,17 @@ function handleMessage(request, sender, sendResponse) {
       api.tabs.remove(tab.id);
     });
   } else if (request.type === 'LEETCODE_SUBMISSION') {
-    api.webNavigation.onHistoryStateUpdated.addListener(
-      (e = function (details) {
-        const submissionId = details.url.match(/\/submissions\/(\d+)\//)[1];
-        sendResponse({ submissionId });
-        api.webNavigation.onHistoryStateUpdated.removeListener(e);
-      }),
-      { url: [{ hostSuffix: 'leetcode.com' }, { pathContains: 'submissions' }] }
-    );
+    // Resolve with the id from the next /submissions/<id>/ URL. The filter also matches other
+    // leetcode.com navigations, which must be ignored (not thrown on) while we keep waiting.
+    const listener = details => {
+      const match = details.url.match(/\/submissions\/(\d+)\//);
+      if (!match) return;
+      api.webNavigation.onHistoryStateUpdated.removeListener(listener);
+      sendResponse({ submissionId: match[1] });
+    };
+    api.webNavigation.onHistoryStateUpdated.addListener(listener, {
+      url: [{ hostSuffix: 'leetcode.com' }, { pathContains: 'submissions' }],
+    });
   }
   return true;
 }
