@@ -475,7 +475,10 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
     } catch (err) {
       // Keep the form open so nothing typed is lost.
       statusLine.className = 'status error';
-      statusLine.textContent = `Failed: ${err.message}`;
+      statusLine.textContent = `Failed: ${err.message}${err.detail ? ` (${err.detail})` : ''}${
+        err.request ? ` at ${err.request}` : ''
+      }`;
+      console.error('LeetHub tracker: save failed', err);
       save.disabled = cancel.disabled = false;
     }
   });

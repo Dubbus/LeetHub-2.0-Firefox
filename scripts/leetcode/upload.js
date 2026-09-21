@@ -28,11 +28,15 @@ function encode_base64(content) {
 
 async function getGitHubResponse(URL, options) {
   return fetch(URL, options)
-    .then(res => {
+    .then(async res => {
       if (!res.ok) {
         // using window.Error is a workaround to avoid promise rejection being wrapped by
         // generic error object, which is not useful for us.
-        throw new window.Error(res.status);
+        const err = new window.Error(res.status);
+        // GitHub explains failures in the body; keep it for callers that want to show it.
+        err.detail = await res.json().then(b => b.message, () => undefined);
+        err.request = `${(options && options.method) || 'GET'} ${URL.replace('https://api.github.com', '')}`;
+        throw err;
       }
       return res;
     })
@@ -158,7 +162,7 @@ async function createTreeAndCommit(token, hook, filesToCommit, commitMsg) {
 
   // Make BRANCH_NAME point to the created commit
   await getGitHubResponse(REF_URL, {
-    method: 'POST',
+    method: 'PATCH',
     headers: HEADERS,
     body: JSON.stringify({
       sha: newCommitSha,
