@@ -533,6 +533,125 @@ export function planView(ctx) {
   );
 }
 
+/* ---------- Problems (flat list, like the workbook's "Problem List (by Week)") ---------- */
+
+const PROBLEM_STATUSES = ['Solved', 'Attempted', 'Not started'];
+
+export function problemsView(ctx) {
+  const { rows, today, keyOf, problemFilters: filters } = ctx;
+  const groups = groupByProblem(rows, keyOf);
+  const scheduleByKey = new Map(reviewSchedule(rows, ctx.problems).map(s => [s.key, s]));
+
+  const items = planProblems
+    .filter(p => p.url)
+    .map(problem => {
+      const key = keyOf({ name: problem.name, url: problem.url, lc: '' });
+      const g = groups.get(key);
+      return {
+        problem,
+        group: g,
+        status: !g ? 'Not started' : g.everSolved ? 'Solved' : 'Attempted',
+        sched: scheduleByKey.get(key),
+      };
+    });
+
+  const tbody = h('tbody');
+  const count = h('span', { class: 'muted' });
+
+  const renderBody = () => {
+    const q = filters.q.trim().toLowerCase();
+    const list = items.filter(i => {
+      const pr = i.problem;
+      if (filters.week && String(pr.week) !== filters.week) return false;
+      if (filters.pattern && pr.pattern !== filters.pattern) return false;
+      if (filters.status && i.status !== filters.status) return false;
+      if (q && ![pr.name, pr.pattern, pr.notes].some(t => (t || '').toLowerCase().includes(q))) return false;
+      return true;
+    });
+    tbody.replaceChildren(
+      ...list.map(i => {
+        const pr = i.problem;
+        const overdue = i.sched && i.sched.next <= today;
+        return h(
+          'tr',
+          {},
+          h('td', { textContent: pr.week }),
+          h('td', { textContent: pr.pattern }),
+          h('td', {}, link(pr.name, pr.url)),
+          h('td', {}, badge(pr.difficulty, pr.difficulty)),
+          h('td', { class: 'nowrap' }, link('Open →', pr.url)),
+          h(
+            'td',
+            {},
+            i.status === 'Solved'
+              ? badge('Solved', 'Solved')
+              : i.status === 'Attempted'
+              ? badge(i.group.latest.status || 'Attempted', i.group.latest.status)
+              : h('span', { class: 'muted', textContent: '—' })
+          ),
+          h('td', { textContent: i.group ? i.group.rows.length : '' }),
+          h(
+            'td',
+            { class: 'nowrap' },
+            i.sched ? (overdue ? badge('DUE', 'DUE') : h('span', { textContent: i.sched.next })) : ''
+          ),
+          h('td', { textContent: pr.notes })
+        );
+      })
+    );
+    const solved = items.filter(i => i.status === 'Solved').length;
+    count.textContent = `${list.length} of ${items.length} shown · ${solved} solved`;
+  };
+
+  const bind = key => ({
+    oninput: e => {
+      filters[key] = e.target.value;
+      renderBody();
+    },
+  });
+  const select = (key, allLabel, values) => {
+    const sel = h(
+      'select',
+      { onchange: bind(key).oninput },
+      h('option', { value: '', textContent: allLabel }),
+      values.map(v => h('option', { value: String(v), textContent: typeof v === 'number' ? `Week ${v}` : v }))
+    );
+    sel.value = filters[key];
+    return sel;
+  };
+  const weeks = [...new Set(items.map(i => i.problem.week))];
+  const patterns = [...new Set(items.map(i => i.problem.pattern))];
+
+  renderBody();
+  return h(
+    'div',
+    {},
+    h(
+      'div',
+      { class: 'row', style: 'margin-bottom:10px' },
+      h('input', { type: 'search', placeholder: 'Search…', value: filters.q, oninput: bind('q').oninput }),
+      select('week', 'All weeks', weeks),
+      select('pattern', 'All patterns', patterns),
+      select('status', 'All statuses', PROBLEM_STATUSES),
+      count
+    ),
+    h(
+      'div',
+      { class: 'tablewrap' },
+      h(
+        'table',
+        {},
+        h('thead', {}, h('tr', {}, ['Week', 'Pattern', 'Problem', 'Difficulty', 'LeetCode link', 'Status', 'Attempts', 'Next review', 'Notes'].map(t => h('th', { textContent: t })))),
+        tbody
+      )
+    ),
+    h('p', {
+      class: 'muted',
+      textContent: 'The plan’s problem list by week. Status comes from your logged attempts; Next review is when it is due again.',
+    })
+  );
+}
+
 /* ---------- Reference ---------- */
 
 export function referenceView() {

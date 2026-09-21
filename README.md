@@ -105,6 +105,7 @@ Popup → **Open dashboard** (or `dashboard.html?demo` to preview with sample da
 - **Today**: what to review (most overdue first, with a backlog cap), stats, weekly new/review progress vs the plan.
 - **Attempts**: every attempt with the workbook's computed columns (interval, next review, days until due, due flag).
   Only a problem's latest attempt is live; older attempts show as *superseded* instead of staying due forever. Click a row to edit or delete it.
+- **Problems**: the plan's problem list week by week (like the workbook's *Problem List* tab) with your status, attempts and next review; filter by week, pattern or status.
 - **Plan / Reference**: the 8-week plan and problem list (auto-ticked from your attempts), pattern cheatsheet, Leitner guide.
 - **Import CSV**: bring in history exported from the workbook's *Problem Tracker* tab (dates, Excel serial dates and missing links are handled; duplicates are skipped).
 

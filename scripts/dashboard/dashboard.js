@@ -6,7 +6,7 @@
 import { TRACKER_FILENAME, parseRows, toCsv, makeKeyer, importRows } from '../leetcode/trackerCsv';
 import { getAuth, readCsv, writeCsv, PLAN_PROBLEMS } from '../leetcode/trackerStore';
 import { earliestDate } from './stats';
-import { h, todayView, attemptsView, planView, referenceView, editDialog } from './views';
+import { h, todayView, attemptsView, planView, referenceView, problemsView, editDialog } from './views';
 
 const DEFAULTS = { sessionSize: 5, advancePct: 80, focusOverride: '' };
 const SETTING_KEYS = {
@@ -14,7 +14,13 @@ const SETTING_KEYS = {
   tracker_advance_pct: 'advancePct',
   tracker_focus_override: 'focusOverride',
 };
-const TABS = { today: todayView, attempts: attemptsView, plan: planView, reference: referenceView };
+const TABS = {
+  today: todayView,
+  attempts: attemptsView,
+  plan: planView,
+  reference: referenceView,
+  problems: problemsView,
+};
 
 const demo = new URLSearchParams(window.location.search).has('demo');
 
@@ -70,6 +76,7 @@ const state = {
   settings: { ...DEFAULTS },
   focusPattern: '', // pattern to draw new problems from first (per tab session)
   filters: { q: '', pattern: '', status: '', dueOnly: false },
+  problemFilters: { q: '', week: '', pattern: '', status: '' },
   sort: { id: 'date', dir: 'desc' },
   importPreview: null,
   todayOverride: readOverride(), // simulated "today" for testing the schedule; per tab session only
