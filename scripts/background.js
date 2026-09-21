@@ -47,34 +47,12 @@ function handleMessage(request, sender, sendResponse) {
     );
   } else if (request.type === 'TRACKER_APPEND') {
     appendToTracker(request.payload).then(sendResponse);
+  } else if (request.type === 'TRACKER_CONNECT') {
+    connectTracker().then(sendResponse);
+  } else if (request.type === 'TRACKER_NEW_SHEET') {
+    newTrackerSheet().then(sendResponse);
   }
   return true;
-}
-
-/* Append a row to the interview-prep Google Sheet via the user's Apps Script web app. */
-async function appendToTracker(payload) {
-  try {
-    const { tracker_url, tracker_secret } = await api.storage.local.get([
-      'tracker_url',
-      'tracker_secret',
-    ]);
-    if (!tracker_url) {
-      return { ok: false, error: 'Tracker URL not set. Add it in the LeetHub popup.' };
-    }
-    // text/plain avoids a CORS preflight, which Apps Script web apps don't answer.
-    const res = await fetch(tracker_url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ secret: tracker_secret || '', row: payload }),
-    });
-    if (!res.ok) {
-      return { ok: false, error: `HTTP ${res.status}` };
-    }
-    const body = await res.json();
-    return body.ok ? body : { ok: false, error: body.error || 'Unknown sheet error' };
-  } catch (err) {
-    return { ok: false, error: err.message };
-  }
 }
 
 function isChrome() {

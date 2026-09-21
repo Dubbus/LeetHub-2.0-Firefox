@@ -128,19 +128,41 @@ BrowserUtil.instance.storage.local.get('leethub_token', data => {
 });
 
 /* Interview tracker settings */
-BrowserUtil.instance.storage.local.get(['tracker_url', 'tracker_secret'], data => {
-  $('#tracker_url').val(data.tracker_url || '');
-  $('#tracker_secret').val(data.tracker_secret || '');
+const trackerStatus = (text, ok) =>
+  $('#tracker_status')
+    .text(text)
+    .css('color', ok ? '#5cb85c' : '#d9534f');
+
+const showTrackerSheet = url => {
+  $('#tracker_sheet_link').attr('href', url);
+  $('#tracker_sheet').show();
+  trackerStatus('Connected ✓', true);
+};
+
+$('#tracker_redirect').text(BrowserUtil.instance.identity.getRedirectURL());
+
+BrowserUtil.instance.storage.local.get(['tracker_client_id', 'tracker_sheet_url'], data => {
+  $('#tracker_client_id').val(data.tracker_client_id || '');
+  if (data.tracker_sheet_url) showTrackerSheet(data.tracker_sheet_url);
 });
 
-$('#tracker_save').on('click', () => {
-  BrowserUtil.instance.storage.local.set(
-    {
-      tracker_url: $('#tracker_url').val().trim(),
-      tracker_secret: $('#tracker_secret').val().trim(),
-    },
-    () => {
-      $('#tracker_saved').show().delay(1500).fadeOut();
-    }
-  );
+$('#tracker_connect').on('click', async () => {
+  const clientId = $('#tracker_client_id').val().trim();
+  if (!clientId) {
+    trackerStatus('Enter the client ID first.', false);
+    return;
+  }
+  await BrowserUtil.instance.storage.local.set({ tracker_client_id: clientId });
+  trackerStatus('Waiting for Google sign-in…', true);
+  const res = await BrowserUtil.instance.runtime.sendMessage({ type: 'TRACKER_CONNECT' });
+  if (res && res.ok) showTrackerSheet(res.sheetUrl);
+  else trackerStatus((res && res.error) || 'Failed', false);
+});
+
+$('#tracker_new').on('click', async e => {
+  e.preventDefault();
+  trackerStatus('Creating sheet…', true);
+  const res = await BrowserUtil.instance.runtime.sendMessage({ type: 'TRACKER_NEW_SHEET' });
+  if (res && res.ok) showTrackerSheet(res.sheetUrl);
+  else trackerStatus((res && res.error) || 'Failed', false);
 });

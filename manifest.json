@@ -16,15 +16,15 @@
     "128": "assets/thumbnail.png"
   },
   "background": {
-    "scripts": ["scripts/background.js"]
+    "scripts": ["scripts/sheets.js", "scripts/background.js"]
   },
   "host_permissions": [
-    "https://script.google.com/*",
-    "https://script.googleusercontent.com/*"
+    "https://sheets.googleapis.com/*"
   ],
   "permissions": [
     "unlimitedStorage",
     "storage",
+    "identity",
     "webNavigation"
   ],
   "content_scripts": [

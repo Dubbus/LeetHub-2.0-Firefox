@@ -4,8 +4,8 @@
  * 1. A floating timer widget on LeetCode problem pages:
  *      Start initial approach -> Stop (starts solving timer) -> [submit accepted]
  * 2. After an accepted submission, a notes form whose contents (plus the
- *    timings) are appended as a row to a Google Sheet via an Apps Script web app
- *    (see apps-script/Code.gs). The actual POST happens in background.js.
+ *    timings) are appended as a row to a Google Sheet via the Sheets API
+ *    (scripts/sheets.js). The actual API calls happen in the background script.
  */
 
 const HOST_ID = 'lh-tracker-host';
@@ -217,8 +217,8 @@ function collectProblemInfo(leetCode, slug) {
 }
 
 async function isTrackerConfigured() {
-  const { tracker_url } = await api().storage.local.get('tracker_url');
-  return Boolean(tracker_url);
+  const { tracker_sheet_id } = await api().storage.local.get('tracker_sheet_id');
+  return Boolean(tracker_sheet_id);
 }
 
 /**

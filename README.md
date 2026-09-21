@@ -91,13 +91,15 @@ npm run lint-test     Test all code is linted properly
 
 ## Interview tracker (fork addition)
 
-Timer + notes form that appends a row to a Google Sheet.
+Timer + notes form that appends a row to a Google Sheet the extension creates for you.
 
-1. Convert your `interview_prep_tracker.xlsx` to a Google Sheet (File → Save as Google Sheets).
-2. Follow the setup steps at the top of [`apps-script/Code.gs`](apps-script/Code.gs) and deploy it as a web app.
-3. Paste the `/exec` URL and secret into the extension popup ("Interview tracker").
-4. On a LeetCode problem, use the floating widget: **Start initial approach** → **Stop & start solving** → submit.
-   When the submission is accepted, a notes form opens; saving appends the row (problem, difficulty, topics,
-   approach/solve minutes, pattern, confidence, notes, …). Columns are matched by header name in row 1.
+One-time setup:
+1. [Google Cloud Console](https://console.cloud.google.com) → new project → enable the **Google Sheets API**.
+2. OAuth consent screen: External, status *Testing*, add your Google account as a test user.
+3. Credentials → Create OAuth client ID → **Web application**. Under *Authorized redirect URIs* add the
+   URI shown in the extension popup ("Redirect URI to allow").
+4. Paste the client ID into the popup and click **Connect Google**. A sheet named `interview_prep_tracker` is created.
 
-If no tracker URL is configured, the timer still works but no form is shown.
+Usage: on a LeetCode problem use the floating widget: **Start initial approach** → **Stop & start solving** → submit.
+When the submission is accepted a notes form opens; saving appends a row. Columns are matched by header name in
+row 1, so you can rename/reorder/add columns in the sheet. If not connected, the timer still works but no form is shown.
