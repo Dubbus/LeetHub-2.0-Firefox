@@ -50,8 +50,9 @@ a { color: var(--link); }
 #banner.error { background: #fde2e1; color: #7a1f1c; }
 
 main { max-width: 1200px; margin: 0 auto; padding: 20px 24px 60px; }
-h2 { font-size: 16px; margin: 26px 0 10px; }
-h2:first-child { margin-top: 0; }
+/* Equal space above and below, so a heading sits centred between the boxes around it. */
+h2 { font-size: 16px; margin: 20px 0; }
+main#view > div > h2:first-child { margin-top: 0; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .stat b { display: block; font-size: 26px; line-height: 1.1; }
@@ -124,3 +125,11 @@ dialog h3 { margin: 0 0 10px; }
 main#view.attempts { max-width: none; }
 main#view.attempts th, main#view.attempts td { padding: 6px 8px; font-size: 13px; }
 main#view.attempts td:nth-child(n+4):not(:nth-child(7)) { white-space: nowrap; }
+
+/* Date controls (Today override + plan start) in the header */
+#dates { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+#dates label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+#dates input[type=date] { padding: 3px 6px; }
+#dates .simulated input { border-color: var(--accent); outline: 1px solid var(--accent); }
+#dates .sim-note { color: var(--accent); font-weight: 700; font-size: 12px; }
+#dates button { padding: 3px 8px; font-size: 12px; }

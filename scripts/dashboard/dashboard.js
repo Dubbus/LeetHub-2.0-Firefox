@@ -50,6 +50,15 @@ async function githubBackend() {
 
 /* ---------- state ---------- */
 
+const OVERRIDE_KEY = 'tracker_today_override';
+function readOverride() {
+  try {
+    return sessionStorage.getItem(OVERRIDE_KEY) || '';
+  } catch (err) {
+    return '';
+  }
+}
+
 const state = {
   rows: [],
   planStart: '',
@@ -57,6 +66,7 @@ const state = {
   filters: { q: '', pattern: '', status: '', dueOnly: false },
   sort: { id: 'date', dir: 'desc' },
   importPreview: null,
+  todayOverride: readOverride(), // simulated "today" for testing the schedule; per tab session only
 };
 let backend;
 
@@ -80,7 +90,7 @@ function render() {
 
   const ctx = {
     ...state,
-    today: localDay(),
+    today: state.todayOverride || localDay(),
     problems: PLAN_PROBLEMS,
     keyOf: makeKeyer(state.rows, PLAN_PROBLEMS),
     onSetting,
@@ -92,8 +102,46 @@ function render() {
       render();
     },
   };
+  renderDates();
   $('view').className = tab; // lets CSS widen the Attempts table
   $('view').replaceChildren(TABS[tab](ctx));
+}
+
+/* ---------- date controls ---------- */
+
+function setTodayOverride(value) {
+  // Picking the real date (or clearing the field) turns the simulation off.
+  state.todayOverride = value && value !== localDay() ? value : '';
+  try {
+    if (state.todayOverride) sessionStorage.setItem(OVERRIDE_KEY, state.todayOverride);
+    else sessionStorage.removeItem(OVERRIDE_KEY);
+  } catch (err) {
+    // sessionStorage unavailable: the override just won't survive a reload
+  }
+  render();
+}
+
+function renderDates() {
+  const simulated = Boolean(state.todayOverride);
+  const todayInput = h('input', {
+    type: 'date',
+    value: state.todayOverride || localDay(),
+    onchange: e => setTodayOverride(e.target.value),
+  });
+  todayInput.dataset.role = 'today';
+  const planInput = h('input', {
+    type: 'date',
+    value: state.planStart || '',
+    onchange: e => onSetting('tracker_plan_start', e.target.value),
+  });
+  planInput.dataset.role = 'plan';
+
+  $('dates').replaceChildren(
+    h('label', { class: simulated ? 'simulated' : '' }, 'Today', todayInput),
+    simulated ? h('span', { class: 'sim-note', textContent: 'simulated' }) : null,
+    simulated ? h('button', { textContent: 'Reset', title: 'Back to the real date', onclick: () => setTodayOverride('') }) : null,
+    h('label', {}, 'Plan start', planInput)
+  );
 }
 
 /* ---------- actions ---------- */

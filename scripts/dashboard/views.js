@@ -71,7 +71,7 @@ const emptyCard = text => h('div', { class: 'card empty', textContent: text });
 /* ---------- Today ---------- */
 
 export function todayView(ctx) {
-  const { rows, today, planStart, dailyLimit, keyOf, onSetting } = ctx;
+  const { rows, today, planStart, dailyLimit, keyOf } = ctx;
   if (rows.length === 0) {
     return h(
       'div',
@@ -104,6 +104,9 @@ export function todayView(ctx) {
       ? order.map(k => [k, counts[k] || 0])
       : Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const max = Math.max(1, ...entries.map(e => e[1]));
+    if (entries.every(e => e[1] === 0)) {
+      return h('div', { class: 'muted', textContent: 'No solved problems yet (only Solved attempts count).' });
+    }
     return entries.map(([k, n]) =>
       h(
         'div',
@@ -135,24 +138,14 @@ export function todayView(ctx) {
       h(
         'div',
         { class: 'card' },
-        h(
-          'div',
-          { class: 'row' },
-          h('label', { class: 'muted', textContent: 'Plan start' }),
-          h('input', {
-            type: 'date',
-            value: planStart || '',
-            onchange: e => onSetting('tracker_plan_start', e.target.value),
-          })
-        ),
         progress
           ? h(
               'div',
-              { class: 'row', style: 'margin-top:8px' },
+              { class: 'row' },
               target(`new · week ${week}`, progress.newCount, weekPlan ? targetNumber(weekPlan.newTarget) : null),
               target('reviews', progress.reviewCount, weekPlan ? targetNumber(weekPlan.reviewTarget) : null)
             )
-          : h('div', { class: 'muted', textContent: 'Set a start date to track weekly targets.' })
+          : h('div', { class: 'muted', textContent: 'Set a plan start date (top right) to track weekly targets.' })
       )
     ),
 
@@ -425,7 +418,7 @@ export function planView(ctx) {
     {},
     h('h2', { textContent: '8-week plan' }),
     table(['Week', 'Phase', 'Patterns', 'New (done / target)', 'Reviews (done / target)', 'Hours', 'Focus'], weekRows),
-    !planStart ? h('p', { class: 'muted', textContent: 'Set a plan start date on the Today tab to see weekly progress.' }) : null,
+    !planStart ? h('p', { class: 'muted', textContent: 'Set a plan start date (top right) to see weekly progress.' }) : null,
     h('h2', { textContent: 'Problems by week' }),
     weekSections
   );
