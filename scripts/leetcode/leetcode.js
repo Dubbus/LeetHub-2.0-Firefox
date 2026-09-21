@@ -1,5 +1,6 @@
 import { LeetCodeV1, LeetCodeV2 } from './versions';
 import setupManualSubmitBtn from './submitBtn';
+import { initTrackerWidget, promptTrackerNotes } from './tracker';
 import { debounce, isEmpty, LeetHubError, FILENAMES } from './util';
 import {
   uploadOnAcceptedSubmission,
@@ -61,7 +62,7 @@ document.addEventListener('click', event => {
   }
 });
 
-function loader(leetCode) {
+function loader(leetCode, { manual = false } = {}) {
   let iterations = 0;
   const intervalId = setInterval(async () => {
     try {
@@ -74,12 +75,18 @@ function loader(leetCode) {
         }
         return;
       }
+      const acceptedAt = Date.now();
       leetCode.startSpinner();
 
       // If successful, stop polling
       clearInterval(intervalId);
-      await uploadOnAcceptedSubmission(leetCode);
-      leetCode.markUploaded();
+      try {
+        await uploadOnAcceptedSubmission(leetCode);
+        leetCode.markUploaded();
+      } finally {
+        // Notes form is independent of the GitHub upload: show it even if the upload failed.
+        promptTrackerNotes(leetCode, { acceptedAt, manual });
+      }
     } catch (err) {
       leetCode.markUploadFailed();
       clearInterval(intervalId);
@@ -186,6 +193,8 @@ BrowserUtil.instance.storage.local.get('isSync', data => {
   }
 });
 
+initTrackerWidget();
+
 setupManualSubmitBtn(
   debounce(
     () => {
@@ -193,7 +202,7 @@ setupManualSubmitBtn(
       const leetCode = new LeetCodeV2();
       const submissionId = window.location.href.match(/leetcode\.com\/.*\/submissions\/(\d+)/)[1];
       leetCode.submissionId = submissionId;
-      loader(leetCode);
+      loader(leetCode, { manual: true });
       return;
     },
     5000,

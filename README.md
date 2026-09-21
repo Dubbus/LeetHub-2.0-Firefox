@@ -88,3 +88,16 @@ npm run format-test   Test all code is formatted properly
 npm run lint          Lint JavaScript
 npm run lint-test     Test all code is linted properly
 ```
+
+## Interview tracker (fork addition)
+
+Timer + notes form that appends a row to a Google Sheet.
+
+1. Convert your `interview_prep_tracker.xlsx` to a Google Sheet (File → Save as Google Sheets).
+2. Follow the setup steps at the top of [`apps-script/Code.gs`](apps-script/Code.gs) and deploy it as a web app.
+3. Paste the `/exec` URL and secret into the extension popup ("Interview tracker").
+4. On a LeetCode problem, use the floating widget: **Start initial approach** → **Stop & start solving** → submit.
+   When the submission is accepted, a notes form opens; saving appends the row (problem, difficulty, topics,
+   approach/solve minutes, pattern, confidence, notes, …). Columns are matched by header name in row 1.
+
+If no tracker URL is configured, the timer still works but no form is shown.

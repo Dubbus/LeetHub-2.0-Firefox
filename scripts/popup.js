@@ -126,3 +126,21 @@ BrowserUtil.instance.storage.local.get('leethub_token', data => {
     xhr.send();
   }
 });
+
+/* Interview tracker settings */
+BrowserUtil.instance.storage.local.get(['tracker_url', 'tracker_secret'], data => {
+  $('#tracker_url').val(data.tracker_url || '');
+  $('#tracker_secret').val(data.tracker_secret || '');
+});
+
+$('#tracker_save').on('click', () => {
+  BrowserUtil.instance.storage.local.set(
+    {
+      tracker_url: $('#tracker_url').val().trim(),
+      tracker_secret: $('#tracker_secret').val().trim(),
+    },
+    () => {
+      $('#tracker_saved').show().delay(1500).fadeOut();
+    }
+  );
+});

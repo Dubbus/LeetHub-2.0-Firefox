@@ -109,6 +109,21 @@
         </div>
       </div>
 
+      <!-- Interview tracker settings -->
+      <div id="tracker_settings" class="sixteen wide column">
+        <div class="ui small header">Interview tracker (Google Sheet)</div>
+        <div class="ui small fluid input">
+          <input id="tracker_url" type="url" placeholder="Apps Script web app URL (…/exec)" />
+        </div>
+        <div class="ui small fluid input" style="margin-top: 6px">
+          <input id="tracker_secret" type="password" placeholder="Shared secret" />
+        </div>
+        <button id="tracker_save" type="button" class="ui small secondary button" style="margin-top: 6px">
+          Save
+        </button>
+        <span id="tracker_saved" style="color: #5cb85c" hidden>Saved ✓</span>
+      </div>
+
       <!-- Generate Socials -->
       <div id="socials" class="sixteen wide column">
         <a

@@ -18,6 +18,10 @@
   "background": {
     "scripts": ["scripts/background.js"]
   },
+  "host_permissions": [
+    "https://script.google.com/*",
+    "https://script.googleusercontent.com/*"
+  ],
   "permissions": [
     "unlimitedStorage",
     "storage",
