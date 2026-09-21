@@ -7,6 +7,13 @@ import {
   suggestBox,
   nextReview,
   dueReviews,
+  reviewSchedule,
+  makeKeyer,
+  normalizeDate,
+  weekOf,
+  splitQueue,
+  annotateAttempts,
+  importRows,
 } from './trackerCsv';
 
 const row = overrides => ({
@@ -105,5 +112,114 @@ describe('nextReview / dueReviews', () => {
     ];
     const due = dueReviews(rows, '2026-09-20');
     expect(due.map(d => d.lc)).toEqual(['76', '125']);
+  });
+});
+
+const PROBLEMS = [
+  { name: 'Two Sum II - Input Array Is Sorted', url: 'https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/' },
+  { name: 'Valid Palindrome', url: 'https://leetcode.com/problems/valid-palindrome/' },
+  { name: 'Valid Palindrome II', url: 'https://leetcode.com/problems/valid-palindrome-ii/' },
+];
+
+describe('problem identity', () => {
+  test('rows of the same problem share a key across url / lc / name', () => {
+    const rows = [
+      row({ lc: '167', name: 'Two Sum II - Input Array Is Sorted', url: 'https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/' }),
+      row({ lc: '167', name: 'whatever', url: '' }), // learns the slug from the LC # of the row above
+      row({ lc: '', name: 'two sum II ', url: '' }), // unique prefix of a known name
+    ];
+    const keyOf = makeKeyer(rows);
+    expect(new Set(rows.map(keyOf)).size).toBe(1);
+  });
+  test('a prefix shared by several known names is not guessed', () => {
+    const keyOf = makeKeyer([], PROBLEMS);
+    expect(keyOf({ name: 'valid palindrome', url: '', lc: '' })).toBe('slug:valid-palindrome');
+    expect(keyOf({ name: 'valid pal', url: '', lc: '' })).toBe('name:valid pal');
+  });
+  test('falls back to lc, then name', () => {
+    const keyOf = makeKeyer([]);
+    expect(keyOf({ lc: '5', name: 'x', url: '' })).toBe('lc:5');
+    expect(keyOf({ lc: '', name: '  Foo  Bar ', url: '' })).toBe('name:foo bar');
+  });
+});
+
+describe('normalizeDate / weekOf', () => {
+  test('ISO, US and Excel serial dates', () => {
+    expect(normalizeDate('2026-09-08')).toBe('2026-09-08');
+    expect(normalizeDate('9/8/2026')).toBe('2026-09-08');
+    expect(normalizeDate('46272')).toBe('2026-09-07');
+    expect(normalizeDate(46274)).toBe('2026-09-09');
+  });
+  test('rejects junk', () => {
+    expect(normalizeDate('')).toBe('');
+    expect(normalizeDate('soon')).toBe('');
+    expect(normalizeDate('12')).toBe('');
+  });
+  test('plan weeks are 1-based, 7 days each', () => {
+    expect(weekOf('2026-09-08', '2026-09-08')).toBe(1);
+    expect(weekOf('2026-09-14', '2026-09-08')).toBe(1);
+    expect(weekOf('2026-09-15', '2026-09-08')).toBe(2);
+    expect(weekOf('2026-09-01', '2026-09-08')).toBe(1);
+    expect(weekOf('2026-09-15', 'nope')).toBe(null);
+  });
+});
+
+describe('schedule: the "always DUE" fix', () => {
+  const failed = row({ lc: '3', date: '2026-09-01', status: 'Failed', box: '1' });
+  const resolved = row({ lc: '3', date: '2026-09-10', status: 'Solved', box: '2' });
+
+  test('an old failed attempt is superseded, not DUE, once the problem is re-solved', () => {
+    const annotated = annotateAttempts([failed, resolved], '2026-09-20');
+    expect(annotated.map(a => a.flag)).toEqual(['superseded', 'DUE']); // resolved: next 09-14
+    expect(dueReviews([failed, resolved], '2026-09-20')).toHaveLength(1);
+  });
+  test('live rows show the workbook columns: interval, next review, days until due', () => {
+    const [a] = annotateAttempts([resolved], '2026-09-12');
+    expect([a.interval, a.next, a.daysUntil, a.flag]).toEqual([4, '2026-09-14', 2, '-']);
+  });
+  test('days until due goes negative when overdue', () => {
+    const [a] = annotateAttempts([resolved], '2026-09-20');
+    expect([a.daysUntil, a.flag]).toEqual([-6, 'DUE']);
+  });
+  test('schedule entries carry their key', () => {
+    expect(reviewSchedule([resolved])[0].key).toBe('lc:3');
+  });
+  test('backlog split keeps the most overdue for today', () => {
+    const due = [1, 2, 3, 4, 5, 6, 7].map(n => ({ lc: String(n) }));
+    const { today, backlog } = splitQueue(due, 5);
+    expect([today.length, backlog.length, backlog[0].lc]).toEqual([5, 2, '6']);
+  });
+});
+
+describe('importRows (workbook Problem Tracker export)', () => {
+  const HEADER =
+    'Date Solved,LC #,Problem Name,Pattern,Difficulty,Source,Company Tag(s),Attempt Type,Time to First Approach (min),Total Time (min),Needed Framework/Hint?,Solved Status,Approach Quality (1-5),Optimal Complexity?,Bugs / Mistakes Made,Leitner Box (1-5),Interval (days),Next Review Date,Days Until Due,Review Due?,Notes / Takeaway';
+  const csv = [
+    HEADER,
+    '2026-09-08,3,Longest Substring Without Repeating Characters,Sliding Window,Medium,Pattern Drill,,Cold,12,22,N,Solved,4,Y,off-by-one,2,4,2026-09-12,-8,DUE,clean',
+    '46274,,two sum II ,Two Pointers,Easy,Pattern Drill,,Warm (read write-up first),15,35,Y,Partial,3,Y,forgot finish,1,2,,,,',
+    ',,,,,,,,,,,,,,,,,,,,', // fully empty line: dropped by the CSV parser
+    'soon,9,Bad Date Problem,,,,,,,,,,,,,,,,,,', // unusable date
+    '2026-09-08,3,Longest Substring Without Repeating Characters,Sliding Window,Medium,Pattern Drill,,Cold,12,22,N,Solved,4,Y,off-by-one,2,,,,,dup',
+  ].join('\n');
+
+  test('maps by header, ignores formula columns, normalizes dates, resolves links, skips blank and duplicates', () => {
+    const { rows, skipped } = importRows(csv, [], PROBLEMS);
+    expect(rows).toHaveLength(2);
+    expect(skipped).toEqual({ blank: 1, duplicate: 1 });
+    expect(rows[0].box).toBe('2');
+    expect(rows[0].notes).toBe('clean');
+    expect(rows[1].date).toBe('2026-09-09');
+    expect(rows[1].url).toBe('https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/');
+    expect('interval' in rows[0]).toBe(false);
+  });
+  test('does not re-import rows already in the CSV', () => {
+    const first = importRows(csv, [], PROBLEMS).rows;
+    const again = importRows(csv, first, PROBLEMS);
+    expect(again.rows).toHaveLength(0);
+    expect(again.skipped.duplicate).toBe(3);
+  });
+  test('tolerates a UTF-8 BOM', () => {
+    expect(importRows('\uFEFF' + csv, [], PROBLEMS).rows).toHaveLength(2);
   });
 });

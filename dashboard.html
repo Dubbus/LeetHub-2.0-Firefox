@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interview Dashboard · LeetHub 2.0</title>
+    <link rel="stylesheet" href="css/dashboard.css" />
+  </head>
+  <body>
+    <header class="top">
+      <h1>Leet<span class="accent">Hub</span> <small>Interview Dashboard</small></h1>
+      <nav id="tabs">
+        <a href="#today" data-tab="today">Today</a>
+        <a href="#attempts" data-tab="attempts">Attempts</a>
+        <a href="#plan" data-tab="plan">Plan</a>
+        <a href="#reference" data-tab="reference">Reference</a>
+      </nav>
+      <span id="source" class="muted"></span>
+    </header>
+    <div id="banner" hidden></div>
+    <main id="view"></main>
+    <dialog id="dialog"></dialog>
+
+    <script src="scripts/browserutil.js"></script>
+    <script src="scripts/dashboard.js"></script>
+  </body>
+</html>

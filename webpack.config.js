@@ -2,7 +2,7 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const FileManagerPlugin = require('filemanager-webpack-plugin');
 
-const entries = ['leetcode', 'welcome'];
+const entries = ['leetcode', 'welcome', 'dashboard'];
 const extensionVersion = process.env.npm_package_version;
 
 // Ignore when copying
@@ -15,6 +15,9 @@ const ignore = [
   '**/webpack*',
   '**/scripts/leetcode/**',
   '**/scripts/welcome.js',
+  '**/scripts/dashboard/*.js', // bundled into dashboard.js (fixtures still ship for ?demo)
+  '**/scripts/dashboard/data/**',
+  '**/tools/**',
   '**/README.md',
   '**/assets/extension', // web store assets
   '**/assets/firefox',
@@ -38,6 +41,7 @@ module.exports = {
   entry: {
     leetcode: path.resolve(__dirname, 'scripts', 'leetcode', 'leetcode.js'),
     welcome: './scripts/welcome.js',
+    dashboard: './scripts/dashboard/dashboard.js',
   },
   watchOptions: {
     ignored: '**/dist/**',
@@ -107,6 +111,10 @@ module.exports = {
             {
               source: './dist/welcome.js',
               destination: './dist/scripts/welcome.js',
+            },
+            {
+              source: './dist/dashboard.js',
+              destination: './dist/scripts/dashboard.js',
             },
           ],
         },

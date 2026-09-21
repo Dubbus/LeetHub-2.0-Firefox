@@ -1,0 +1,9 @@
+Date Solved,LC #,Problem Name,Pattern,Difficulty,Source,Company Tag(s),Attempt Type,Time to First Approach (min),Total Time (min),Needed Framework/Hint?,Solved Status,Approach Quality (1-5),Optimal Complexity?,Bugs / Mistakes Made,Leitner Box (1-5),Notes / Takeaway,LeetCode Link
+2026-09-01,125,Valid Palindrome,Two Pointers,Easy,Pattern Drill,,Cold,4,9,N,Failed,2,N,Didn't know how to start,1,Re-read the two-pointer template,https://leetcode.com/problems/valid-palindrome/
+2026-09-04,125,Valid Palindrome,Two Pointers,Easy,Review,,Cold,2,6,N,Solved,4,Y,None,2,Clean once I used the template,https://leetcode.com/problems/valid-palindrome/
+2026-09-02,167,Two Sum II - Input Array Is Sorted,Two Pointers,Medium,Pattern Drill,,Warm (read write-up first),15,35,Y,Partial,3,Y,Forgot how to finish,1,Move the pointer of the smaller side,https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/
+2026-09-03,15,3Sum,Two Pointers,Medium,Pattern Drill,,Cold,12,30,N,Solved,3,Y,Skipping duplicates,3,"Sort first, then fix one and two-pointer the rest; skip dupes",https://leetcode.com/problems/3sum/
+2026-09-08,3,Longest Substring Without Repeating Characters,Sliding Window,Medium,Pattern Drill,,Cold,12,22,N,Solved,4,Y,Off-by-one when shrinking window,2,Clean on 2nd pass. Watch the left-pointer update order.,https://leetcode.com/problems/longest-substring-without-repeating-characters/
+2026-09-15,76,Minimum Window Substring,Sliding Window,Hard,Pattern Drill,Google,Warm (read write-up first),25,45,Y,Partial,2,N,Struggled to track valid count,1,Re-attempt cold in 2 days,https://leetcode.com/problems/minimum-window-substring/
+2026-09-16,704,Binary Search,Binary Search,Easy,Pattern Drill,,Cold,4,6,N,Solved,5,Y,None,3,Fast and clean,https://leetcode.com/problems/binary-search/
+2026-09-17,200,Number of Islands,BFS,Medium,Company Tag,Meta,Cold,8,20,N,Solved,4,Y,,2,,https://leetcode.com/problems/number-of-islands/

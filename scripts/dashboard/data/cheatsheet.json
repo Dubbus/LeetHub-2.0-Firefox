@@ -1,0 +1,92 @@
+[
+  {
+    "pattern": "Arrays & Hashing",
+    "framework": "Trade space for time with a hashmap/hashset to turn O(n^2) brute-force comparisons into O(n). Three recurring motifs: frequency counting (does this element repeat, how often), complement lookup (have I already seen the value I need to pair with this one), and grouping by a canonical key (e.g. sorted string or char-count signature for anagrams).",
+    "signal": "Any 'have you seen this before', 'count occurrences', or 'group items that share a property' problem — usually your first instinct should be 'can a hashmap make this O(n)?'",
+    "backup": "NeetCode: 'Arrays & Hashing' playlist"
+  },
+  {
+    "pattern": "Two Pointers",
+    "framework": "Opposite-direction pointers (start/end) close in toward each other for sorted-array target-sum and palindrome checks. Same-direction (fast/slow) pointers handle in-place array edits and linked-list cycle/middle detection.",
+    "signal": "Sorted array + 'find a pair/triplet', or 'remove/dedupe in place', or linked-list cycle/middle.",
+    "backup": "NeetCode: 'Two Pointers' playlist"
+  },
+  {
+    "pattern": "Sliding Window",
+    "framework": "Expand a right pointer to grow the window until a condition is met or broken; shrink from the left while updating the best answer; maintain window state (hashmap/counter) incrementally, never recompute from scratch.",
+    "signal": "'Longest/shortest/count of substrings or subarrays satisfying X'.",
+    "backup": "NeetCode: 'Sliding Window' playlist"
+  },
+  {
+    "pattern": "Binary Search",
+    "framework": "One unified while(left <= right) template. The only thing that changes between variants is what happens when nums[mid] == target: return immediately (exact match), keep shrinking right (find left boundary), or keep shrinking left (find right boundary). 'Search on the answer' reuses the exact same template over a value range instead of an index range.",
+    "signal": "Sorted array, or a monotonic yes/no condition over a range of possible answers (capacity, speed, days).",
+    "backup": "NeetCode: 'Binary Search' playlist"
+  },
+  {
+    "pattern": "Linked List Techniques",
+    "framework": "Use a dummy head node to remove edge-case branching at the list's start. Fast/slow pointers find the middle or detect a cycle (Floyd's). Reverse iteratively with prev/curr/next pointers, or recursively for reversing a sublist.",
+    "signal": "Any 'reverse', 'find middle', 'detect/start of cycle', or 'merge k lists' problem.",
+    "backup": "NeetCode: 'Linked List' playlist"
+  },
+  {
+    "pattern": "Monotonic Stack",
+    "framework": "Keep a stack that is always increasing or always decreasing. Before pushing a new element, pop everything that violates monotonicity — each popped element just found its 'next greater/smaller' answer.",
+    "signal": "'Next greater/smaller element', daily temperatures, largest rectangle in histogram.",
+    "backup": "NeetCode: 'Stack' playlist"
+  },
+  {
+    "pattern": "Monotonic Queue",
+    "framework": "Same idea as a monotonic stack but implemented as a deque, so you can pop from both ends — lets you maintain a sliding-window max/min in O(n) instead of O(n log n) with a heap.",
+    "signal": "'Sliding window maximum/minimum'.",
+    "backup": "NeetCode video: 'Sliding Window Maximum'"
+  },
+  {
+    "pattern": "Prefix Sum / Difference Array",
+    "framework": "Prefix sum array precomputes running totals so any range sum is one subtraction (O(1) per query). A difference array does the mirror trick for range *updates*: mark a delta at the start and end index, then reconstruct with one pass.",
+    "signal": "Many range-sum queries on a static array, or many range-increment updates before a final read.",
+    "backup": "NeetCode video: 'Range Sum Query'"
+  },
+  {
+    "pattern": "Binary Tree Recursion Mindset",
+    "framework": "For any tree problem, decide up front: is this a 'traversal' problem (visit every node, accumulate into external/instance state, like a manual for-loop) or a 'decompose' problem (define precisely what the recursive call on a subtree returns, then combine the children's results)? Default to the decompose framing — it generalizes to tree DP.",
+    "signal": "Any binary tree problem, especially ones that feel like 'compute something about this subtree'.",
+    "backup": "NeetCode: 'Trees' playlist"
+  },
+  {
+    "pattern": "BFS",
+    "framework": "Level-order traversal with a queue and a visited set: for each level, pop everything currently in the queue, process it, and push unvisited neighbors — incrementing a step counter once per level, not per node.",
+    "signal": "Shortest path / fewest steps in an unweighted graph or grid.",
+    "backup": "NeetCode: 'Graphs' playlist (BFS videos)"
+  },
+  {
+    "pattern": "Backtracking",
+    "framework": "Every backtracking problem shares one skeleton: track the current path (choices made), the list of remaining choices, and an end condition. Loop over choices -> make the choice -> recurse -> undo the choice. Subsets, combinations, permutations, and N-Queens are the same skeleton with different choice lists and pruning rules.",
+    "signal": "'Generate all ...' / 'find all valid ...' problems where brute force over choices is the only way in.",
+    "backup": "NeetCode: 'Backtracking' playlist"
+  },
+  {
+    "pattern": "Dynamic Programming",
+    "framework": "Three-step framework: (1) identify the base case, (2) write a precise plain-English definition of what dp[i] / dp(i) means, (3) find the state-transition equation connecting dp[i] to smaller subproblems. Implement as top-down memoized recursion first (easier to reason about correctness), then convert to a bottom-up array if you need to strip recursion overhead.",
+    "signal": "Overlapping subproblems + optimal substructure — ask 'what decision am I making at each step, and what do I need to remember about the past to make it?'",
+    "backup": "NeetCode: 'Dynamic Programming' playlist"
+  },
+  {
+    "pattern": "Greedy",
+    "framework": "At each step, make the locally optimal choice (often after sorting by some key — end time for interval scheduling, ratio for fractional knapsack) and trust — or prove — that local optimum compounds into a global optimum. Faster than DP whenever it's provably correct.",
+    "signal": "Interval scheduling/merging, 'minimum number of X to cover Y', jump-game style reachability.",
+    "backup": "NeetCode: 'Greedy' playlist"
+  },
+  {
+    "pattern": "Union-Find (Disjoint Set)",
+    "framework": "Maintain a parent pointer per node; union() links two components' roots, find() walks to the root. Path compression + union-by-rank/size keep both operations near O(1) amortized.",
+    "signal": "'Are these connected?', dynamic connectivity as edges are added, cycle detection in an undirected graph.",
+    "backup": "NeetCode video: 'Union Find' / 'Graph Valid Tree'"
+  },
+  {
+    "pattern": "Graph Traversal, Topological Sort, Dijkstra",
+    "framework": "DFS/BFS generalize straight from trees to graphs — just add a visited set so you don't revisit nodes. Topological sort via Kahn's algorithm is BFS seeded from all zero-in-degree nodes (and doubles as a directed-cycle detector). Dijkstra is BFS with a min-heap priority queue instead of a plain queue, for weighted shortest paths.",
+    "signal": "Course prerequisite / build-order problems (topo sort); weighted shortest path (Dijkstra); general graph connectivity/traversal.",
+    "backup": "NeetCode: 'Graphs' + 'Advanced Graphs' playlists"
+  }
+]

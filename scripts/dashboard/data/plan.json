@@ -1,0 +1,82 @@
+[
+  {
+    "week": 1,
+    "phase": "Foundations",
+    "patterns": "Two Pointers (opposite-direction for sorted arrays/palindromes; same-direction/fast-slow for in-place ops & linked lists) + Sliding Window (expand right, shrink left, track window state) + Arrays & Hashing (hashmap/hashset for O(1) lookups — frequency counting, complement lookups, anagram grouping)",
+    "newTarget": "23",
+    "reviewTarget": "0",
+    "hours": "24-27",
+    "companyPct": "0%",
+    "notes": "Pure cold-attempt discipline starts here. No review load yet — you have nothing banked. Arrays & Hashing problems are mostly quick (many under 15 min) so they absorb into the week without blowing up hours much."
+  },
+  {
+    "week": 2,
+    "phase": "Foundations",
+    "patterns": "Binary Search (unified left<=right template; same skeleton for exact match, left-bound, right-bound, and 'search on the answer') + Linked List Techniques (dummy head, fast/slow, iterative reversal)",
+    "newTarget": "16",
+    "reviewTarget": "~3",
+    "hours": "22-24",
+    "companyPct": "0%",
+    "notes": "Start logging every problem in the Tracker. Begin reviewing your 2-3 shakiest Week 1 problems."
+  },
+  {
+    "week": 3,
+    "phase": "Foundations",
+    "patterns": "Monotonic Stack (next greater/smaller element) + Monotonic Queue (O(n) sliding-window max/min) + Prefix Sum / Difference Array (range queries/updates) + Binary Tree recursion mindset (traversal vs. decompose)",
+    "newTarget": "18",
+    "reviewTarget": "~5",
+    "hours": "22-24",
+    "companyPct": "0%",
+    "notes": "This is the most 'aha' week for tree recursion — force yourself to write the decompose-style definition before coding."
+  },
+  {
+    "week": 4,
+    "phase": "Foundations",
+    "patterns": "BFS (level-order w/ queue + visited set, shortest path in unweighted graphs/grids) + Backtracking (path / choices / end-condition skeleton — subsets, combinations, permutations, N-Queens)",
+    "newTarget": "20",
+    "reviewTarget": "~6",
+    "hours": "24-26",
+    "companyPct": "0%",
+    "notes": "Backtracking is volume-heavy on purpose — the skeleton is identical across subtypes, so reps compound fast once it clicks."
+  },
+  {
+    "week": 5,
+    "phase": "Foundations",
+    "patterns": "Dynamic Programming Part 1 — the 3-step framework (base case -> precise dp definition -> state transition), top-down memoized recursion vs. bottom-up dp array, classic 1D DP (climbing stairs, house robber, coin change) + intro 2D DP",
+    "newTarget": "18",
+    "reviewTarget": "~8",
+    "hours": "24-26",
+    "companyPct": "0%",
+    "notes": "Slow down here. DP is the pattern most candidates fake their way through — insist on writing the dp definition in a comment before any code."
+  },
+  {
+    "week": 6,
+    "phase": "Foundations",
+    "patterns": "DP Part 2 (subsequence DP, knapsack variants) + Graph algorithms (Union-Find w/ path compression, topological sort / Kahn's, Dijkstra, plus deeper graph traversal: Clone Graph, Surrounded Regions, Reconstruct Itinerary, Cheapest Flights Within K Stops) + Greedy (interval scheduling) — closes out the core pattern set",
+    "newTarget": "18",
+    "reviewTarget": "~10",
+    "hours": "26-28",
+    "companyPct": "0%",
+    "notes": "Still zero company-tag time this week on purpose. Breadth across all patterns comes first; tagging is a later supplement, not a driver. Graph got a deeper pass here since it was thin before."
+  },
+  {
+    "week": 7,
+    "phase": "Breadth Round-Out",
+    "patterns": "New patterns that round out all-round coverage: Heap/Priority Queue, Trie, Intervals, Bit Manipulation, Design problems (LRU Cache, etc.), plus advanced Binary Tree (serialize/deserialize, construct from traversals, max path sum, kth smallest in BST) — these show up constantly but weren't fully covered in weeks 1-6",
+    "newTarget": "24",
+    "reviewTarget": "~14",
+    "hours": "24-27",
+    "companyPct": "~15%",
+    "notes": "This week exists because 'all-round' isn't complete without heaps/tries/intervals/bit-manip/advanced trees. Company-repo browsing (see that tab) is light exposure only, not the focus."
+  },
+  {
+    "week": 8,
+    "phase": "Integration",
+    "patterns": "No new pattern — full-system spaced review across all 14+ patterns, timed mixed mock sets (2 random-pattern problems / 45 min, no notes) pulled from a general mixed pool, plus a light final pass through your target companies' repo lists to catch obvious blind spots.",
+    "newTarget": "10",
+    "reviewTarget": "~20",
+    "hours": "22-24",
+    "companyPct": "~20%",
+    "notes": "This week is about retention and unknown-pattern reflexes, not coverage. Every Tracker row marked 'DUE' takes priority over anything new."
+  }
+]

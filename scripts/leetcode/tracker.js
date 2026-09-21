@@ -12,17 +12,22 @@ import {
   TRACKER_FILENAME,
   OPTIONS,
   guessPattern,
-  appendRow,
   parseRows,
   suggestBox,
-  reviewSchedule,
+  makeKeyer,
+  dueReviews,
 } from './trackerCsv';
-import { getGitHubFile, createTreeAndCommit, decode_base64, encode } from './upload';
+import {
+  getAuth,
+  readCsv,
+  appendAttempt,
+  refreshScheduleIfStale,
+  PLAN_PROBLEMS,
+} from './trackerStore';
 
 const HOST_ID = 'lh-tracker-host';
 const TIMERS_KEY = 'tracker_timers';
 const TICK_MS = 1000;
-const SCHEDULE_TTL_MS = 60 * 60 * 1000;
 
 const PHASE = Object.freeze({ IDLE: 'idle', APPROACH: 'approach', SOLVING: 'solving' });
 
@@ -95,63 +100,6 @@ const localDay = (d = new Date()) =>
     2,
     '0'
   )}`;
-
-/* ---------- auth / GitHub CSV ---------- */
-
-/** GitHub credentials from LeetHub's own auth, or null if unavailable or the tracker is switched off. */
-async function getAuth() {
-  const { leethub_token, leethub_hook, mode_type, tracker_enabled } = await api().storage.local.get([
-    'leethub_token',
-    'leethub_hook',
-    'mode_type',
-    'tracker_enabled',
-  ]);
-  if (tracker_enabled === false || mode_type !== 'commit' || !leethub_token || !leethub_hook) {
-    return null;
-  }
-  return { token: leethub_token, hook: leethub_hook };
-}
-
-async function readCsv({ token, hook }) {
-  try {
-    const file = await getGitHubFile(token, hook, TRACKER_FILENAME);
-    return decode_base64(file.content);
-  } catch (err) {
-    if (err.message === '404') return ''; // no tracker file yet
-    throw err;
-  }
-}
-
-async function cacheSchedule(csvText) {
-  await api().storage.local.set({
-    tracker_reviews: reviewSchedule(parseRows(csvText)),
-    tracker_reviews_at: Date.now(),
-  });
-}
-
-/** Keeps the popup's review list fresh even if the CSV was edited elsewhere. Best effort. */
-async function refreshScheduleIfStale() {
-  try {
-    const auth = await getAuth();
-    if (!auth) return;
-    const { tracker_reviews_at } = await api().storage.local.get('tracker_reviews_at');
-    if (tracker_reviews_at && Date.now() - tracker_reviews_at < SCHEDULE_TTL_MS) return;
-    await cacheSchedule(await readCsv(auth));
-  } catch (err) {
-    console.error('LeetHub tracker: could not refresh review schedule', err);
-  }
-}
-
-async function appendAttempt(auth, row) {
-  const next = appendRow(await readCsv(auth), row);
-  await createTreeAndCommit(
-    auth.token,
-    auth.hook,
-    [{ path: TRACKER_FILENAME, content: encode(next) }],
-    `Log ${row.name} attempt - LeetHub`
-  );
-  await cacheSchedule(next);
-}
 
 /* ---------- timer persistence (per problem slug, survives reloads) ---------- */
 
@@ -398,6 +346,11 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
   const box = selectEl(OPTIONS.oneToFive, '1');
   const notes = el('textarea', { placeholder: 'Key insight / takeaway' });
   const statusLine = el('div', { className: 'status' });
+  const dueNote = el('div', {
+    className: 'meta',
+    textContent: 'Due for review. Saving logs it as a Review; skipping leaves it due.',
+    hidden: true,
+  });
   const save = el('button', { textContent: 'Save' });
   const cancel = el('button', { className: 'secondary', textContent: manual ? 'Cancel' : 'Skip' });
 
@@ -417,13 +370,21 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
   box.addEventListener('change', () => (boxTouched = true));
   [status, hint, attemptType].forEach(c => c.addEventListener('change', recomputeBox));
   lc.addEventListener('input', recomputeBox);
+  // If this problem is due for review, log it as a Review by default (one click to save).
+  let sourceTouched = false;
+  source.addEventListener('change', () => (sourceTouched = true));
   getAuth()
     .then(auth => auth && readCsv(auth))
     .then(text => {
       history = parseRows(text || '');
       recomputeBox();
+      const key = makeKeyer(history, PLAN_PROBLEMS)({ lc: lc.value.trim(), name: name.value, url: info.url });
+      if (dueReviews(history, date.value, PLAN_PROBLEMS).some(d => d.key === key)) {
+        if (!sourceTouched) source.value = 'Review';
+        dueNote.hidden = false;
+      }
     })
-    .catch(() => {}); // suggestion is best effort
+    .catch(() => {}); // suggestions are best effort
 
   const close = async () => {
     // Skipping an accepted submission (or finishing a save) ends that problem's timer.
@@ -497,6 +458,7 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
       { className: 'modal' },
       el('h2', { textContent: manual ? 'Log attempt' : 'Accepted ✓' }),
       el('div', { className: 'meta', textContent: timing || 'No timer was running for this problem.' }),
+      dueNote,
       el(
         'div',
         { className: 'grid' },

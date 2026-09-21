@@ -160,3 +160,5 @@ BrowserUtil.instance.storage.local.get(['tracker_enabled', 'tracker_reviews'], d
 $('#tracker_enabled').on('change', e => {
   BrowserUtil.instance.storage.local.set({ tracker_enabled: e.target.checked });
 });
+
+$('#open_dashboard').attr('href', BrowserUtil.instance.runtime.getURL('dashboard.html'));

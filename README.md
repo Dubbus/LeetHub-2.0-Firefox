@@ -97,10 +97,16 @@ GitHub repo, using the GitHub sign-in LeetHub already has. No extra setup.
 - On a LeetCode problem, use the floating widget: **Start initial approach** → **Stop & start solving** → submit.
 - When the submission is accepted, a form opens pre-filled (problem, difficulty, pattern, times, Leitner box).
   Fill in the rest and save. **Log without solving** records a Failed/Partial attempt.
-- The popup lists problems **due for review** using Leitner intervals (box 1-5 → 2/4/8/16/30 days).
+- The popup lists problems **due for review** using Leitner intervals (box 1-5 → 2/4/8/16/30 days) and links to the dashboard.
 - Toggle the tracker off in the popup.
 
-### Getting the data into the workbook
-Columns follow the workbook's *Problem Tracker* tab (A-P, then Notes), skipping its formula columns so a paste never
-overwrites them: open the CSV, paste the first 16 data columns into `A:P` and *Notes / Takeaway* into `U`. The
-trailing *LeetCode Link* column is extra and can be ignored.
+### Dashboard
+Popup → **Open dashboard** (or `dashboard.html?demo` to preview with sample data). It replaces the spreadsheet:
+- **Today**: what to review (most overdue first, with a backlog cap), stats, weekly new/review progress vs the plan.
+- **Attempts**: every attempt with the workbook's computed columns (interval, next review, days until due, due flag).
+  Only a problem's latest attempt is live; older attempts show as *superseded* instead of staying due forever. Click a row to edit or delete it.
+- **Plan / Reference**: the 8-week plan and problem list (auto-ticked from your attempts), pattern cheatsheet, Leitner guide.
+- **Import CSV**: bring in history exported from the workbook's *Problem Tracker* tab (dates, Excel serial dates and missing links are handled; duplicates are skipped).
+
+The CSV columns still follow the workbook's *Problem Tracker* tab, so you can open `interview_tracker.csv` in Excel/Sheets too.
+The plan/reference content was extracted from the workbook with `tools/extract-workbook.py`.

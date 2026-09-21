@@ -1,0 +1,24 @@
+{
+  "title": "Company-Wise Question Repo — Supplemental Use Only",
+  "intro": "Resource: github.com/snehasishroy/leetcode-companywise-interview-questions (free, no Premium needed). This is deliberately NOT the primary driver of this plan — patterns come first for all-round readiness. Use this tab only as described below.",
+  "rows": [
+    {
+      "when": "Weeks 1-6: not at all",
+      "how": "Skip this tab entirely. Every problem should come from the 8-Week Plan / Problem List tabs.",
+      "companies": "N/A",
+      "budget": "0%"
+    },
+    {
+      "when": "Week 7-8: light exposure",
+      "how": "Open the repo, pick a company folder from your active pipeline, skim the list — solve 2-3 problems you haven't already covered as a pattern-recognition check, not a checklist to clear.",
+      "companies": "Rotate: Google, Meta, Stripe, Databricks first (Fall 2026 priority); Snowflake, Apple, Nvidia, Nutanix, Cohere, Astranis, Bloomberg, Shopify if time allows (already in your pipeline)",
+      "budget": "~15-20% of that week's new problems (see Review Weighting Guide)"
+    },
+    {
+      "when": "The moment you have a real interview scheduled",
+      "how": "Pivot hard: open that specific company's folder, work top-to-bottom through as much of the list as your prep window allows. This is the one time company-repo problems should become primary over patterns.",
+      "companies": "Whichever company just gave you a date",
+      "budget": "As much as the timeline demands"
+    }
+  ]
+}

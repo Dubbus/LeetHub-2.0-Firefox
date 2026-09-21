@@ -1,0 +1,88 @@
+{
+  "mix": [
+    {
+      "week": 1,
+      "new": "100%",
+      "review": "0%",
+      "company": "0%",
+      "rationale": "No bank to review yet — pure acquisition."
+    },
+    {
+      "week": 2,
+      "new": "85%",
+      "review": "15%",
+      "company": "0%",
+      "rationale": "First spaced reps kick in on Week 1's shakiest problems."
+    },
+    {
+      "week": 3,
+      "new": "80%",
+      "review": "20%",
+      "company": "0%",
+      "rationale": "Review load grows as Week 1-2 patterns start decaying."
+    },
+    {
+      "week": 4,
+      "new": "75%",
+      "review": "25%",
+      "company": "0%",
+      "rationale": "Backtracking is volume-heavy; review stays modest to protect new-pattern time."
+    },
+    {
+      "week": 5,
+      "new": "70%",
+      "review": "30%",
+      "company": "0%",
+      "rationale": "DP requires the most new-material time of any week; review capped at 30% deliberately."
+    },
+    {
+      "week": 6,
+      "new": "65%",
+      "review": "35%",
+      "company": "0%",
+      "rationale": "Still all-pattern, no company-repo time — breadth finishes before any tagged drilling starts."
+    },
+    {
+      "week": 7,
+      "new": "60%",
+      "review": "40%",
+      "company": "~15%",
+      "rationale": "New-pattern time goes to heap/trie/intervals/bit-manip/design, not companies. Company-repo browsing is light exposure only."
+    },
+    {
+      "week": 8,
+      "new": "45%",
+      "review": "55%",
+      "company": "~20%",
+      "rationale": "Review dominates because retention matters more than coverage now. Company-repo time stays a minority — pivot it upward only once a real interview is on the calendar."
+    }
+  ],
+  "leitner": [
+    {
+      "box": 1,
+      "meaning": "Just solved / struggled / needed the write-up",
+      "days": 2
+    },
+    {
+      "box": 2,
+      "meaning": "Solved with a hint, or slow",
+      "days": 4
+    },
+    {
+      "box": 3,
+      "meaning": "Solved cleanly but not yet fast",
+      "days": 8
+    },
+    {
+      "box": 4,
+      "meaning": "Solved cold, good approach",
+      "days": 16
+    },
+    {
+      "box": 5,
+      "meaning": "Mastered — spot-check only",
+      "days": 30
+    }
+  ],
+  "rule": "Every problem starts in Box 1. Bump it up one box each time you re-solve it cleanly and cold; drop it back to Box 1 if you fumble it on review — the point is catching decay before an interview does."
+}

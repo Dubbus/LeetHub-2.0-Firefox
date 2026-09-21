@@ -1,0 +1,18 @@
+{
+  "title": "8-Week Interview Prep Tracker",
+  "subtitle": "Pattern-first (Weeks 1-5) -> Company-tagged drilling (Weeks 6-8), with growing spaced-review load.",
+  "rules": [
+    {
+      "label": "Cold-first",
+      "text": "Always attempt a new problem cold for 20-25 min before opening the labuladong write-up or a NeetCode video. If you crack it cold, log it as 'Cold' — that's the signal that matters, not just 'solved'."
+    },
+    {
+      "label": "Never fully drop a pattern",
+      "text": "Once a pattern's drilling week has passed, keep at least 1-2 reps/week alive via the Review Tracker — interviews can land with no notice, so nothing should go more than ~10 days untouched."
+    },
+    {
+      "label": "Log immediately",
+      "text": "Fill in the tracker row right after each problem, not at the end of the day — approach quality and mistakes are accurate for about 5 minutes after you finish."
+    }
+  ]
+}
