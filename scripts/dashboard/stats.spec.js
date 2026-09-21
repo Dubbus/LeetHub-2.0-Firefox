@@ -1,5 +1,17 @@
 import { makeKeyer, parseRows, toCsv, appendRow } from '../leetcode/trackerCsv';
-import { groupByProblem, overallStats, weekProgress, targetNumber, earliestDate } from './stats';
+import {
+  groupByProblem,
+  overallStats,
+  weekProgress,
+  targetNumber,
+  earliestDate,
+  parsePct,
+  planProgress,
+  focusWeek,
+  patternProgress,
+  nextNew,
+  sessionMix,
+} from './stats';
 
 const r = o => ({
   date: '2026-09-08',
@@ -63,5 +75,85 @@ describe('helpers', () => {
     const rows = [r({ notes: 'a, "b"\nc', url: 'https://leetcode.com/problems/x/' }), r({ lc: '2' })];
     expect(parseRows(toCsv(rows)).map(x => x.notes)).toEqual([rows[0].notes, undefined].map(v => v || ''));
     expect(toCsv([rows[0]])).toBe(appendRow(null, rows[0]));
+  });
+});
+
+describe('plan position (progress-based, not calendar-based)', () => {
+  const url = slug => `https://leetcode.com/problems/${slug}/`;
+  const PLAN = [
+    { week: 1, pattern: 'Two Pointers', name: 'Valid Palindrome', url: url('valid-palindrome') },
+    { week: 1, pattern: 'Two Pointers', name: '3Sum', url: url('3sum') },
+    { week: 1, pattern: 'Sliding Window', name: 'Longest Substring', url: url('longest-substring') },
+    { week: 1, pattern: 'Sliding Window', name: 'Min Window', url: url('min-window') },
+    { week: 1, pattern: 'Arrays & Hashing', name: 'Two Sum', url: url('two-sum') },
+    { week: 2, pattern: 'Binary Search', name: 'Binary Search', url: url('binary-search') },
+    { week: 2, pattern: 'Binary Search', name: 'Search Insert', url: url('search-insert') },
+    { week: 3, pattern: 'Mixed', name: 'free-text note', url: '' },
+  ];
+  const attempt = (slug, status = 'Solved') => r({ lc: slug, url: url(slug), name: slug, status });
+  const build = rows => {
+    const keyOf = makeKeyer(rows, PLAN);
+    return planProgress(PLAN, groupByProblem(rows, keyOf), keyOf);
+  };
+
+  test('counts solved problems per plan week; weeks with only notes have ratio 1', () => {
+    const weeks = build([attempt('valid-palindrome'), attempt('3sum', 'Failed')]);
+    expect(weeks.map(w => [w.week, w.solved, w.total])).toEqual([[1, 1, 5], [2, 0, 2], [3, 0, 0]]);
+    expect(weeks[2].ratio).toBe(1);
+  });
+  test('being behind keeps you on week 1 until it is mostly done, whatever the calendar says', () => {
+    const early = build([attempt('valid-palindrome'), attempt('3sum')]);
+    expect(focusWeek(early, 0.8, null)).toBe(1);
+    const threeOfFive = build(['valid-palindrome', '3sum', 'longest-substring'].map(s => attempt(s)));
+    expect(focusWeek(threeOfFive, 0.8, null)).toBe(1); // 60% is still below 80%
+  });
+  test('week 1 advances at the threshold; manual override wins; finishing everything returns null', () => {
+    const four = build(['valid-palindrome', '3sum', 'longest-substring', 'min-window'].map(s => attempt(s)));
+    expect(focusWeek(four, 0.8, null)).toBe(2);
+    expect(focusWeek(four, 0.8, '1')).toBe(1);
+    const all = build(['valid-palindrome', '3sum', 'longest-substring', 'min-window', 'two-sum', 'binary-search', 'search-insert'].map(s => attempt(s)));
+    expect(focusWeek(all, 0.8, null)).toBe(null);
+  });
+  test('pattern progress inside a week', () => {
+    const week = build([attempt('valid-palindrome'), attempt('longest-substring')])[0];
+    expect(patternProgress(week)).toEqual([
+      { pattern: 'Two Pointers', solved: 1, total: 2 },
+      { pattern: 'Sliding Window', solved: 1, total: 2 },
+      { pattern: 'Arrays & Hashing', solved: 0, total: 1 },
+    ]);
+  });
+  test('next new: focus week in list order, then earlier leftovers, then later weeks', () => {
+    const weeks = build([attempt('valid-palindrome'), attempt('3sum'), attempt('min-window')]);
+    const names = (focus, n, pat) => nextNew(weeks, focus, n, pat).map(i => i.problem.name);
+    expect(names(1, 3)).toEqual(['Longest Substring', 'Two Sum', 'Binary Search']);
+    expect(names(2, 3)).toEqual(['Binary Search', 'Search Insert', 'Longest Substring']);
+  });
+  test('attempted-but-unsolved problems are not offered as new (they return through review)', () => {
+    const weeks = build([attempt('valid-palindrome', 'Failed'), attempt('3sum', 'Partial')]);
+    expect(nextNew(weeks, 1, 5).map(i => i.problem.name)).toEqual(['Longest Substring', 'Min Window', 'Two Sum', 'Binary Search', 'Search Insert']);
+  });
+  test('choosing a pattern pulls its problems first', () => {
+    const weeks = build([]);
+    expect(nextNew(weeks, 1, 3, 'Sliding Window').map(i => i.problem.name)).toEqual(['Longest Substring', 'Min Window', 'Valid Palindrome']);
+    expect(nextNew(weeks, 1, 2, '').map(i => i.week)).toEqual([1, 1]);
+  });
+});
+
+describe('sessionMix / parsePct', () => {
+  test('percentages', () => {
+    expect([parsePct('85%'), parsePct('~15%'), parsePct('0%'), parsePct('')]).toEqual([0.85, 0.15, 0, 0]);
+  });
+  test('week 1 (0% review): one review slot at most, the rest new', () => {
+    expect(sessionMix(5, 0, 6)).toEqual({ reviews: 1, news: 4 });
+  });
+  test('no due reviews means an all-new session', () => {
+    expect(sessionMix(5, 0.55, 0)).toEqual({ reviews: 0, news: 5 });
+  });
+  test('late weeks lean on review but are capped by what is due', () => {
+    expect(sessionMix(5, 0.55, 10)).toEqual({ reviews: 3, news: 2 });
+    expect(sessionMix(5, 0.55, 2)).toEqual({ reviews: 2, news: 3 });
+  });
+  test('reviews can never crowd out everything unless the session is only reviews', () => {
+    expect(sessionMix(3, 0.55, 99).news).toBe(1);
   });
 });

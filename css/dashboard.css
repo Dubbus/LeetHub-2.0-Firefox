@@ -133,3 +133,12 @@ main#view.attempts td:nth-child(n+4):not(:nth-child(7)) { white-space: nowrap; }
 #dates .simulated input { border-color: var(--accent); outline: 1px solid var(--accent); }
 #dates .sim-note { color: var(--accent); font-weight: 700; font-size: 12px; }
 #dates button { padding: 3px 8px; font-size: 12px; }
+
+h3 { font-size: 12px; margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.chip { padding: 3px 10px; border-radius: 14px; font-size: 12px; font-weight: 600; }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pace { display: block; margin-top: 4px; color: var(--accent); }
+details.card summary { cursor: pointer; font-weight: 600; }
+.stat b { overflow-wrap: anywhere; }
+.cards .stat.compact b { font-size: 20px; }

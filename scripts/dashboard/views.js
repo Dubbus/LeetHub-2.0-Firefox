@@ -8,11 +8,20 @@ import {
   INTERVAL_DAYS,
   annotateAttempts,
   reviewSchedule,
-  splitQueue,
   weekOf,
   parseDay,
 } from '../leetcode/trackerCsv';
-import { groupByProblem, overallStats, weekProgress, targetNumber } from './stats';
+import {
+  groupByProblem,
+  overallStats,
+  weekProgress,
+  parsePct,
+  planProgress,
+  focusWeek,
+  patternProgress,
+  nextNew,
+  sessionMix,
+} from './stats';
 import plan from './data/plan.json';
 import planProblems from './data/problems.json';
 import cheatsheet from './data/cheatsheet.json';
@@ -70,33 +79,89 @@ const emptyCard = text => h('div', { class: 'card empty', textContent: text });
 
 /* ---------- Today ---------- */
 
-export function todayView(ctx) {
-  const { rows, today, planStart, dailyLimit, keyOf } = ctx;
-  if (rows.length === 0) {
-    return h(
+const labelled = (text, control, suffix) =>
+  h('label', { class: 'row muted' }, text, control, suffix ? ` ${suffix}` : null);
+
+function settingsPanel(ctx) {
+  const { settings, onSettings } = ctx;
+  const number = (value, min, max, step, key) =>
+    h('input', {
+      type: 'number',
+      min,
+      max,
+      step,
+      value,
+      style: 'width:70px',
+      onchange: e => onSettings(key, Number(e.target.value)),
+    });
+  const position = h(
+    'select',
+    { onchange: e => onSettings('tracker_focus_override', e.target.value) },
+    h('option', { value: '', textContent: 'Auto (by progress)' }),
+    plan.map(p => h('option', { value: String(p.week), textContent: `Week ${p.week} · ${p.phase}` }))
+  );
+  position.value = String(settings.focusOverride || '');
+
+  return h(
+    'details',
+    { class: 'card', style: 'margin-top:20px' },
+    h('summary', { textContent: 'Plan & session settings' }),
+    h(
       'div',
-      {},
-      emptyCard(
-        'No attempts logged yet. Solve a problem with the tracker widget on LeetCode, or import your workbook history from the Attempts tab.'
-      )
-    );
-  }
+      { class: 'row', style: 'margin-top:10px;gap:18px' },
+      labelled('Problems per day', number(settings.sessionSize, 1, 30, 1, 'tracker_session_size')),
+      labelled('Move to the next week at', number(settings.advancePct, 10, 100, 5, 'tracker_advance_pct'), '% solved'),
+      labelled('Plan position', position)
+    ),
+    h('p', {
+      class: 'muted',
+      textContent:
+        'Your plan position follows what you have solved, not the calendar, so falling behind never skips material. The daily new/review split follows the workbook’s weekly mix (Week 1 is all new); overdue reviews always get at least one slot.',
+    })
+  );
+}
+
+export function todayView(ctx) {
+  const { rows, today, planStart, keyOf, settings, focusPattern, onFocusPattern } = ctx;
 
   const groups = groupByProblem(rows, keyOf);
   const stats = overallStats(groups);
   const due = reviewSchedule(rows, ctx.problems).filter(r => r.next <= today);
-  const { today: doToday, backlog } = splitQueue(due, dailyLimit);
-  const week = weekOf(today, planStart);
-  const weekPlan = plan.find(p => p.week === week);
-  const progress = week ? weekProgress(groups, week, planStart) : null;
 
-  const queueItem = r =>
+  // Where you are in the plan (by progress) and what to do today.
+  const weeks = planProgress(planProblems, groups, keyOf);
+  const focus = focusWeek(weeks, settings.advancePct / 100, settings.focusOverride);
+  const focusData = weeks.find(w => w.week === focus);
+  const focusPlan = plan.find(p => p.week === focus);
+  const mix = guide.mix.find(m => m.week === (focus || plan[plan.length - 1].week));
+  const { reviews: nReviews, news: nNew } = sessionMix(settings.sessionSize, mix ? parsePct(mix.review) : 0.5, due.length);
+  const reviewsToday = due.slice(0, nReviews);
+  const backlog = due.slice(nReviews);
+  const queue = nextNew(weeks, focus, nNew + 6, focusPattern);
+  const newToday = queue.slice(0, nNew);
+  const upNext = queue.slice(nNew);
+
+  // Pace vs the calendar (informational only).
+  const calWeek = weekOf(today, planStart);
+  const behind = calWeek && focus ? calWeek - focus : null;
+  const cal = calWeek ? weekProgress(groups, calWeek, planStart) : null;
+
+  const reviewItem = r =>
     h(
       'li',
       {},
       h('span', { class: 'grow' }, link(r.lc ? `${r.lc}. ${r.name}` : r.name, r.url)),
       badge(`box ${r.box}`),
       h('span', { class: 'muted', textContent: dueLabel(daysBetween(today, r.next)) })
+    );
+
+  const newItem = i =>
+    h(
+      'li',
+      {},
+      h('span', { class: 'grow' }, link(i.problem.name, i.problem.url)),
+      badge(i.problem.difficulty, i.problem.difficulty),
+      h('span', { class: 'muted', textContent: i.week === focus ? i.problem.pattern : `${i.problem.pattern} · week ${i.week}` })
     );
 
   const bars = (counts, order) => {
@@ -118,13 +183,33 @@ export function todayView(ctx) {
     );
   };
 
-  const target = (label, done, planned) =>
-    h(
-      'div',
-      { class: 'stat' },
-      h('b', { textContent: `${done}${planned === null || planned === undefined ? '' : ` / ${planned}`}` }),
-      h('span', { textContent: label })
-    );
+  const stat = (value, label, extra, compact = false) =>
+    h('div', { class: `card stat${compact ? ' compact' : ''}` }, h('b', { textContent: value }), h('span', { textContent: label }), extra || null);
+
+  const paceText =
+    behind === null
+      ? ''
+      : behind > 0
+      ? `calendar week ${calWeek}: ${behind} week${behind === 1 ? '' : 's'} behind`
+      : behind < 0
+      ? `calendar week ${calWeek}: ${-behind} week${behind === -1 ? '' : 's'} ahead`
+      : `calendar week ${calWeek}: on pace`;
+
+  const chips = focusData
+    ? h(
+        'div',
+        { class: 'chips' },
+        patternProgress(focusData).map(pp => {
+          const active = focusPattern === pp.pattern;
+          return h('button', {
+            class: `chip${active ? ' active' : ''}`,
+            textContent: `${pp.pattern} ${pp.solved}/${pp.total}`,
+            title: active ? 'Click to stop prioritising this pattern' : 'Start new problems from this pattern first',
+            onclick: () => onFocusPattern(active ? '' : pp.pattern),
+          });
+        })
+      )
+    : null;
 
   return h(
     'div',
@@ -132,32 +217,54 @@ export function todayView(ctx) {
     h(
       'div',
       { class: 'cards' },
-      h('div', { class: 'card stat' }, h('b', { textContent: stats.solved }), h('span', { textContent: 'problems solved' })),
-      h('div', { class: 'card stat' }, h('b', { textContent: stats.attempts }), h('span', { textContent: 'attempts logged' })),
-      h('div', { class: 'card stat' }, h('b', { textContent: due.length }), h('span', { textContent: 'due for review' })),
+      stat(stats.solved, 'problems solved'),
+      stat(stats.attempts, 'attempts logged'),
+      stat(due.length, 'due for review'),
+      stat(
+        focus ? `Week ${focus}` : 'Plan complete',
+        focusPlan && focusData ? `${focusPlan.phase} · ${focusData.solved}/${focusData.total} solved` : 'plan position',
+        paceText ? h('span', { class: 'pace', textContent: paceText }) : null
+      ),
+      cal ? stat(`${cal.newCount} new · ${cal.reviewCount} review`, `this calendar week (week ${calWeek})`, null, true) : null
+    ),
+
+    h('h2', { textContent: `Today’s session (${nNew + nReviews})` }),
+    rows.length === 0
+      ? h('p', { class: 'muted', textContent: 'Nothing logged yet. Start with the new problems below; use the tracker widget on LeetCode to log them.' })
+      : null,
+    h(
+      'div',
+      { class: 'cols' },
       h(
         'div',
-        { class: 'card' },
-        progress
-          ? h(
-              'div',
-              { class: 'row' },
-              target(`new · week ${week}`, progress.newCount, weekPlan ? targetNumber(weekPlan.newTarget) : null),
-              target('reviews', progress.reviewCount, weekPlan ? targetNumber(weekPlan.reviewTarget) : null)
-            )
-          : h('div', { class: 'muted', textContent: 'Set a plan start date (top right) to track weekly targets.' })
+        {},
+        h('h3', { textContent: `New (${newToday.length})` }),
+        chips,
+        newToday.length
+          ? h('div', { class: 'card' }, h('ul', { class: 'queue' }, newToday.map(newItem)))
+          : emptyCard('Every problem in the plan is solved 🎉')
+      ),
+      h(
+        'div',
+        {},
+        h('h3', { textContent: `Review (${reviewsToday.length})` }),
+        reviewsToday.length
+          ? h('div', { class: 'card' }, h('ul', { class: 'queue' }, reviewsToday.map(reviewItem)))
+          : emptyCard('Nothing due 🎉')
       )
     ),
 
-    h('h2', { textContent: `Do today (${doToday.length})` }),
-    doToday.length
-      ? h('div', { class: 'card' }, h('ul', { class: 'queue' }, doToday.map(queueItem)))
-      : emptyCard('Nothing due 🎉'),
+    upNext.length
+      ? [
+          h('h2', { textContent: `Up next (${upNext.length})` }),
+          h('div', { class: 'card' }, h('ul', { class: 'queue' }, upNext.map(newItem))),
+        ]
+      : null,
 
     backlog.length
       ? [
-          h('h2', { textContent: `Backlog (${backlog.length})` }),
-          h('div', { class: 'card' }, h('ul', { class: 'queue' }, backlog.map(queueItem))),
+          h('h2', { textContent: `Review backlog (${backlog.length})` }),
+          h('div', { class: 'card' }, h('ul', { class: 'queue' }, backlog.map(reviewItem))),
         ]
       : null,
 
@@ -166,7 +273,9 @@ export function todayView(ctx) {
       { class: 'cols' },
       h('div', {}, h('h2', { textContent: 'By difficulty' }), h('div', { class: 'card' }, bars(stats.byDifficulty, ['Easy', 'Medium', 'Hard']))),
       h('div', {}, h('h2', { textContent: 'By pattern' }), h('div', { class: 'card' }, bars(stats.byPattern)))
-    )
+    ),
+
+    settingsPanel(ctx)
   );
 }
 
@@ -354,71 +463,71 @@ function importPanel(ctx) {
 /* ---------- Plan ---------- */
 
 export function planView(ctx) {
-  const { rows, today, planStart, keyOf } = ctx;
+  const { rows, today, planStart, keyOf, settings } = ctx;
   const groups = groupByProblem(rows, keyOf);
-  const currentWeek = weekOf(today, planStart);
-
+  const weeks = planProgress(planProblems, groups, keyOf);
+  const focus = focusWeek(weeks, settings.advancePct / 100, settings.focusOverride);
+  const calWeek = weekOf(today, planStart);
+  const progressOf = week => weeks.find(w => w.week === week);
   const scheduleByKey = new Map(reviewSchedule(rows, ctx.problems).map(s => [s.key, s]));
 
   const weekRows = plan.map(p => {
-    const prog = planStart ? weekProgress(groups, p.week, planStart) : null;
+    const prog = progressOf(p.week);
+    const hasList = prog && prog.total > 0;
     return h(
       'tr',
-      { class: p.week === currentWeek ? 'week-now' : '' },
-      h('td', { textContent: p.week }),
+      { class: p.week === focus ? 'week-now' : '' },
+      h(
+        'td',
+        { class: 'nowrap' },
+        String(p.week),
+        p.week === focus ? [' ', badge('you are here', 'ok')] : null,
+        p.week === calWeek && p.week !== focus ? [' ', badge('calendar', 'superseded')] : null
+      ),
       h('td', { textContent: p.phase }),
       h('td', { textContent: p.patterns }),
-      h('td', { class: 'nowrap', textContent: prog ? `${prog.newCount} / ${p.newTarget}` : p.newTarget }),
-      h('td', { class: 'nowrap', textContent: prog ? `${prog.reviewCount} / ${p.reviewTarget}` : p.reviewTarget }),
+      h('td', { class: 'nowrap', textContent: hasList ? `${prog.solved} / ${prog.total} solved` : `target ${p.newTarget}` }),
+      h('td', { class: 'nowrap', textContent: `target ${p.reviewTarget}` }),
       h('td', { textContent: p.hours }),
       h('td', { textContent: p.notes })
     );
   });
 
-  const problemsByWeek = new Map();
-  planProblems.forEach(pr => {
-    if (!problemsByWeek.has(pr.week)) problemsByWeek.set(pr.week, []);
-    problemsByWeek.get(pr.week).push(pr);
-  });
-
-  const weekSections = [...problemsByWeek.entries()].map(([week, list]) => {
-    const named = list.filter(pr => pr.url);
-    const solved = named.filter(pr => {
-      const g = groups.get(keyOf({ name: pr.name, url: pr.url, lc: '' }));
-      return g && g.everSolved;
-    }).length;
-
-    const items = list.map(pr => {
-      if (!pr.url) return h('li', {}, h('span', { class: 'muted', textContent: pr.name }));
-      const key = keyOf({ name: pr.name, url: pr.url, lc: '' });
-      const g = groups.get(key);
-      const sched = scheduleByKey.get(key);
-      const overdue = sched && sched.next <= today;
+  const weekSections = weeks
+    .filter(w => w.total > 0)
+    .map(w => {
+      const items = w.items.map(({ problem: pr, solved }) => {
+        const key = keyOf({ name: pr.name, url: pr.url, lc: '' });
+        const sched = scheduleByKey.get(key);
+        const overdue = sched && sched.next <= today;
+        return h(
+          'li',
+          {},
+          h('span', { class: 'tick', textContent: solved ? '✓' : '' }),
+          h('span', { class: 'grow' }, link(pr.name, pr.url)),
+          badge(pr.difficulty, pr.difficulty),
+          h('span', { class: 'muted', textContent: pr.pattern }),
+          sched ? badge(overdue ? 'DUE' : `next ${sched.next}`, overdue ? 'DUE' : '') : null
+        );
+      });
       return h(
-        'li',
-        {},
-        h('span', { class: 'tick', textContent: g && g.everSolved ? '✓' : '' }),
-        h('span', { class: 'grow' }, link(pr.name, pr.url)),
-        badge(pr.difficulty, pr.difficulty),
-        h('span', { class: 'muted', textContent: pr.pattern }),
-        sched ? badge(overdue ? 'DUE' : `next ${sched.next}`, overdue ? 'DUE' : '') : null
+        'details',
+        { class: 'week', open: w.week === focus },
+        h('summary', { textContent: `Week ${w.week} · ${w.solved} / ${w.total} solved` }),
+        h('ul', {}, items)
       );
     });
-
-    return h(
-      'details',
-      { class: 'week', open: week === currentWeek },
-      h('summary', { textContent: `Week ${week} · ${solved} / ${named.length} solved` }),
-      h('ul', {}, items)
-    );
-  });
 
   return h(
     'div',
     {},
     h('h2', { textContent: '8-week plan' }),
-    table(['Week', 'Phase', 'Patterns', 'New (done / target)', 'Reviews (done / target)', 'Hours', 'Focus'], weekRows),
-    !planStart ? h('p', { class: 'muted', textContent: 'Set a plan start date (top right) to see weekly progress.' }) : null,
+    table(['Week', 'Phase', 'Patterns', 'New problems', 'Reviews', 'Hours', 'Focus'], weekRows),
+    h('p', {
+      class: 'muted',
+      textContent:
+        '“You are here” follows your progress, not the calendar: it is the first week with less than the threshold solved (see Today → settings).',
+    }),
     h('h2', { textContent: 'Problems by week' }),
     weekSections
   );

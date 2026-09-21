@@ -8,7 +8,12 @@ import { getAuth, readCsv, writeCsv, PLAN_PROBLEMS } from '../leetcode/trackerSt
 import { earliestDate } from './stats';
 import { h, todayView, attemptsView, planView, referenceView, editDialog } from './views';
 
-const DEFAULT_DAILY_REVIEWS = 5;
+const DEFAULTS = { sessionSize: 5, advancePct: 80, focusOverride: '' };
+const SETTING_KEYS = {
+  tracker_session_size: 'sessionSize',
+  tracker_advance_pct: 'advancePct',
+  tracker_focus_override: 'focusOverride',
+};
 const TABS = { today: todayView, attempts: attemptsView, plan: planView, reference: referenceView };
 
 const demo = new URLSearchParams(window.location.search).has('demo');
@@ -43,7 +48,7 @@ async function githubBackend() {
     label: `${auth.hook}/${TRACKER_FILENAME}`,
     load: () => readCsv(auth),
     save: (text, message) => writeCsv(auth, text, message),
-    getSettings: () => storage.get(['tracker_plan_start', 'tracker_daily_reviews']),
+    getSettings: () => storage.get(['tracker_plan_start', ...Object.keys(SETTING_KEYS)]),
     setSetting: (k, v) => storage.set({ [k]: v }),
   };
 }
@@ -62,7 +67,8 @@ function readOverride() {
 const state = {
   rows: [],
   planStart: '',
-  dailyLimit: DEFAULT_DAILY_REVIEWS,
+  settings: { ...DEFAULTS },
+  focusPattern: '', // pattern to draw new problems from first (per tab session)
   filters: { q: '', pattern: '', status: '', dueOnly: false },
   sort: { id: 'date', dir: 'desc' },
   importPreview: null,
@@ -94,6 +100,11 @@ function render() {
     problems: PLAN_PROBLEMS,
     keyOf: makeKeyer(state.rows, PLAN_PROBLEMS),
     onSetting,
+    onSettings: onSetting,
+    onFocusPattern: pattern => {
+      state.focusPattern = pattern;
+      render();
+    },
     onEdit,
     onImportFile,
     onImportConfirm,
@@ -152,6 +163,7 @@ function renderDates() {
 async function onSetting(key, value) {
   await backend.setSetting(key, value);
   if (key === 'tracker_plan_start') state.planStart = value;
+  if (SETTING_KEYS[key]) state.settings[SETTING_KEYS[key]] = value === '' ? DEFAULTS[SETTING_KEYS[key]] : value;
   render();
 }
 
@@ -219,7 +231,11 @@ async function boot() {
     const [text, settings] = await Promise.all([backend.load(), backend.getSettings()]);
     state.rows = parseRows(text);
     state.planStart = settings.tracker_plan_start || earliestDate(state.rows);
-    state.dailyLimit = Number(settings.tracker_daily_reviews) || DEFAULT_DAILY_REVIEWS;
+    state.settings = {
+      sessionSize: Number(settings.tracker_session_size) || DEFAULTS.sessionSize,
+      advancePct: Number(settings.tracker_advance_pct) || DEFAULTS.advancePct,
+      focusOverride: settings.tracker_focus_override || DEFAULTS.focusOverride,
+    };
     if (demo) banner('Demo mode: showing sample data. Nothing is saved.');
   } catch (err) {
     banner(err.message, true);
