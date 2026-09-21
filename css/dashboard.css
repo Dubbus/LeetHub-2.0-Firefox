@@ -142,3 +142,8 @@ h3 { font-size: 12px; margin: 0 0 8px; color: var(--muted); text-transform: uppe
 details.card summary { cursor: pointer; font-weight: 600; }
 .stat b { overflow-wrap: anywhere; }
 .cards .stat.compact b { font-size: 20px; }
+
+.notes-cell { min-width: 260px; max-width: 460px; white-space: pre-wrap; }
+.notes-cell .history { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.notes-cell .history summary { cursor: pointer; }
+.notes-cell .hist-row { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); }

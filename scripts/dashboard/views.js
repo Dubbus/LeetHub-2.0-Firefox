@@ -537,6 +537,39 @@ export function planView(ctx) {
 
 const PROBLEM_STATUSES = ['Solved', 'Attempted', 'Not started'];
 
+const isBlank = t => !t || !t.trim() || /^none$/i.test(t.trim());
+
+/** What you wrote for one attempt: takeaway plus mistakes (blank / "None" mistakes are hidden). */
+const attemptText = r => [r.notes, isBlank(r.bugs) ? '' : `Mistakes: ${r.bugs}`].filter(t => !isBlank(t));
+
+/** The Notes cell: your latest notes, with the full attempt history expandable when there is more than one. */
+function notesCell(item) {
+  const attempts = item.group
+    ? [...item.group.rows].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    : [];
+  const written = attempts.filter(r => attemptText(r).length > 0);
+  const planNote = item.problem.notes ? h('div', { class: 'muted', textContent: `Plan: ${item.problem.notes}` }) : null;
+  if (written.length === 0) return h('td', {}, planNote);
+
+  const lines = r => attemptText(r).map(t => h('div', { textContent: t }));
+  return h(
+    'td',
+    { class: 'notes-cell' },
+    lines(written[0]),
+    written.length > 1
+      ? h(
+          'details',
+          { class: 'history' },
+          h('summary', { textContent: `All attempts (${written.length})` }),
+          written.map(r =>
+            h('div', { class: 'hist-row' }, h('b', { textContent: `${r.date} · ${r.status || ''}` }), lines(r))
+          )
+        )
+      : null,
+    planNote
+  );
+}
+
 export function problemsView(ctx) {
   const { rows, today, keyOf, problemFilters: filters } = ctx;
   const groups = groupByProblem(rows, keyOf);
@@ -565,7 +598,10 @@ export function problemsView(ctx) {
       if (filters.week && String(pr.week) !== filters.week) return false;
       if (filters.pattern && pr.pattern !== filters.pattern) return false;
       if (filters.status && i.status !== filters.status) return false;
-      if (q && ![pr.name, pr.pattern, pr.notes].some(t => (t || '').toLowerCase().includes(q))) return false;
+      if (q) {
+        const mine = i.group ? i.group.rows.flatMap(r => [r.notes, r.bugs]) : [];
+        if (![pr.name, pr.pattern, pr.notes, ...mine].some(t => (t || '').toLowerCase().includes(q))) return false;
+      }
       return true;
     });
     tbody.replaceChildren(
@@ -595,7 +631,7 @@ export function problemsView(ctx) {
             { class: 'nowrap' },
             i.sched ? (overdue ? badge('DUE', 'DUE') : h('span', { textContent: i.sched.next })) : ''
           ),
-          h('td', { textContent: pr.notes })
+          notesCell(i)
         );
       })
     );
@@ -641,13 +677,14 @@ export function problemsView(ctx) {
       h(
         'table',
         {},
-        h('thead', {}, h('tr', {}, ['Week', 'Pattern', 'Problem', 'Difficulty', 'LeetCode link', 'Status', 'Attempts', 'Next review', 'Notes'].map(t => h('th', { textContent: t })))),
+        h('thead', {}, h('tr', {}, ['Week', 'Pattern', 'Problem', 'Difficulty', 'LeetCode link', 'Status', 'Attempts', 'Next review', 'Your notes'].map(t => h('th', { textContent: t })))),
         tbody
       )
     ),
     h('p', {
       class: 'muted',
-      textContent: 'The plan’s problem list by week. Status comes from your logged attempts; Next review is when it is due again.',
+      textContent:
+        'The plan’s problem list by week. Status, attempts and notes come from your logged attempts (the Notes / Takeaway and Mistakes you enter when saving); Next review is when it is due again.',
     })
   );
 }
