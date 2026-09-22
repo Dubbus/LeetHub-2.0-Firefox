@@ -102,7 +102,7 @@ GitHub repo, using the GitHub sign-in LeetHub already has. No extra setup.
 
 ### Dashboard
 Popup → **Open dashboard** (or `dashboard.html?demo` to preview with sample data). It replaces the spreadsheet:
-- **Today**: what to review (most overdue first, with a backlog cap), stats, weekly new/review progress vs the plan.
+- **Today**: every due review (no cap), a plan position that follows your progress (not the calendar) with a daily target of new problems, and solved-problem stats.
 - **Attempts**: every attempt with the workbook's computed columns (interval, next review, days until due, due flag).
   Only a problem's latest attempt is live; older attempts show as *superseded* instead of staying due forever. Click a row to edit or delete it.
 - **Problems**: the plan's problem list week by week (like the workbook's *Problem List* tab) with your status, attempts and next review; filter by week, pattern or status.

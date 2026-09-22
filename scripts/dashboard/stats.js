@@ -72,12 +72,6 @@ export function earliestDate(rows) {
 
 /* ---------- plan position & new-problem queue ---------- */
 
-/** "85%" -> 0.85, "~15%" -> 0.15, "" -> 0 */
-export const parsePct = s => {
-  const m = /\d+/.exec(String(s || ''));
-  return m ? Number(m[0]) / 100 : 0;
-};
-
 /**
  * Progress per plan week, from the plan's problem list rather than from dates:
  * [{ week, total, solved, ratio, items: [{ problem, solved, group }] }] in week order.
@@ -139,15 +133,4 @@ export function nextNew(weeks, focus, count, focusPattern = '') {
   const earlier = weeks.filter(w => focus && w.week < focus).flatMap(unsolved);
   const later = weeks.filter(w => !focus || w.week > focus).flatMap(unsolved);
   return [...head, ...earlier, ...later].slice(0, count);
-}
-
-/**
- * Splits a daily session between reviews and new problems using the plan week's review share
- * (from the workbook's weighting guide). Overdue reviews always get at least one slot so they never
- * starve, but reviews can't take over: everything else is new.
- */
-export function sessionMix(size, reviewShare, dueCount) {
-  if (dueCount === 0 || size <= 0) return { reviews: 0, news: Math.max(0, size) };
-  const reviews = Math.min(dueCount, size, Math.max(1, Math.round(size * reviewShare)));
-  return { reviews, news: size - reviews };
 }

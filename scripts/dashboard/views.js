@@ -15,12 +15,10 @@ import {
   groupByProblem,
   overallStats,
   weekProgress,
-  parsePct,
   planProgress,
   focusWeek,
   patternProgress,
   nextNew,
-  sessionMix,
 } from './stats';
 import plan from './data/plan.json';
 import planProblems from './data/problems.json';
@@ -116,7 +114,7 @@ function settingsPanel(ctx) {
     h('p', {
       class: 'muted',
       textContent:
-        'Your plan position follows what you have solved, not the calendar, so falling behind never skips material. The daily new/review split follows the workbook’s weekly mix (Week 1 is all new); overdue reviews always get at least one slot.',
+        'Your plan position follows what you have solved, not the calendar, so falling behind never skips material. Every due review is always shown — only new problems are rationed per day.',
     })
   );
 }
@@ -133,10 +131,9 @@ export function todayView(ctx) {
   const focus = focusWeek(weeks, settings.advancePct / 100, settings.focusOverride);
   const focusData = weeks.find(w => w.week === focus);
   const focusPlan = plan.find(p => p.week === focus);
-  const mix = guide.mix.find(m => m.week === (focus || plan[plan.length - 1].week));
-  const { reviews: nReviews, news: nNew } = sessionMix(settings.sessionSize, mix ? parsePct(mix.review) : 0.5, due.length);
-  const reviewsToday = due.slice(0, nReviews);
-  const backlog = due.slice(nReviews);
+  // Reviews: always all of them, so nothing gets buried behind a cap. New problems: rationed per day.
+  const reviewsToday = due;
+  const nNew = settings.sessionSize;
   const queue = nextNew(weeks, focus, nNew + 6, focusPattern);
   const newToday = queue.slice(0, nNew);
   const upNext = queue.slice(nNew);
@@ -228,7 +225,7 @@ export function todayView(ctx) {
       cal ? stat(`${cal.newCount} new · ${cal.reviewCount} review`, `this calendar week (week ${calWeek})`, null, true) : null
     ),
 
-    h('h2', { textContent: `Today’s session (${nNew + nReviews})` }),
+    h('h2', { textContent: `Today’s session (${nNew + reviewsToday.length})` }),
     rows.length === 0
       ? h('p', { class: 'muted', textContent: 'Nothing logged yet. Start with the new problems below; use the tracker widget on LeetCode to log them.' })
       : null,
@@ -258,13 +255,6 @@ export function todayView(ctx) {
       ? [
           h('h2', { textContent: `Up next (${upNext.length})` }),
           h('div', { class: 'card' }, h('ul', { class: 'queue' }, upNext.map(newItem))),
-        ]
-      : null,
-
-    backlog.length
-      ? [
-          h('h2', { textContent: `Review backlog (${backlog.length})` }),
-          h('div', { class: 'card' }, h('ul', { class: 'queue' }, backlog.map(reviewItem))),
         ]
       : null,
 

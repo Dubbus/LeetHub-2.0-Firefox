@@ -5,12 +5,10 @@ import {
   weekProgress,
   targetNumber,
   earliestDate,
-  parsePct,
   planProgress,
   focusWeek,
   patternProgress,
   nextNew,
-  sessionMix,
 } from './stats';
 
 const r = o => ({
@@ -136,24 +134,5 @@ describe('plan position (progress-based, not calendar-based)', () => {
     const weeks = build([]);
     expect(nextNew(weeks, 1, 3, 'Sliding Window').map(i => i.problem.name)).toEqual(['Longest Substring', 'Min Window', 'Valid Palindrome']);
     expect(nextNew(weeks, 1, 2, '').map(i => i.week)).toEqual([1, 1]);
-  });
-});
-
-describe('sessionMix / parsePct', () => {
-  test('percentages', () => {
-    expect([parsePct('85%'), parsePct('~15%'), parsePct('0%'), parsePct('')]).toEqual([0.85, 0.15, 0, 0]);
-  });
-  test('week 1 (0% review): one review slot at most, the rest new', () => {
-    expect(sessionMix(5, 0, 6)).toEqual({ reviews: 1, news: 4 });
-  });
-  test('no due reviews means an all-new session', () => {
-    expect(sessionMix(5, 0.55, 0)).toEqual({ reviews: 0, news: 5 });
-  });
-  test('late weeks lean on review but are capped by what is due', () => {
-    expect(sessionMix(5, 0.55, 10)).toEqual({ reviews: 3, news: 2 });
-    expect(sessionMix(5, 0.55, 2)).toEqual({ reviews: 2, news: 3 });
-  });
-  test('reviews can never crowd out everything unless the session is only reviews', () => {
-    expect(sessionMix(3, 0.55, 99).news).toBe(1);
   });
 });
