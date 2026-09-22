@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "LeetHub 2.0 for Firefox",
-  "description": "Automatically integrate your Leetcode & GeeksforGeeks submissions to GitHub in Firefox",
-  "homepage_url": "https://github.com/maitreya2954/LeetHub-2.0-Firefox",
+  "name": "GritHub",
+  "description": "Auto-sync LeetCode/GeeksforGeeks solutions to GitHub, plus a spaced-repetition interview-prep tracker and dashboard. A fork of LeetHub 2.0 for Firefox by Siddharth Rayabharam.",
+  "homepage_url": "https://github.com/Dubbus/GritHub",
   "version": "__LH_VERSION__",
-  "author": "Siddharth Rayabharam",
+  "author": "Dubbus",
   "action": {
     "default_icon": "assets/thumbnail.png",
     "default_popup": "popup.html",
-    "default_title": "Upload your LeetCode solutions to GitHub"
+    "default_title": "GritHub: sync LeetCode solutions to GitHub + track interview prep"
   },
   "icons": {
     "16": "assets/thumbnail.png",
@@ -43,7 +43,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "leethub-2.0-firefox-by-siddharth-rayabharam@maitreya2954"
+      "id": "grithub@dubbus"
     }
   }
 }

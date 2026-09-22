@@ -1,8 +1,8 @@
 {
-  "name": "LeetHub 2.0",
+  "name": "grithub",
   "version": "2.0.16",
   "private": true,
-  "description": "Automatically integrate your code with LeetCode and GitHub",
+  "description": "LeetHub 2.0 for Firefox + a spaced-repetition interview-prep tracker (fork of Siddharth Rayabharam's LeetHub 2.0 for Firefox)",
   "scripts": {
     "dev": "webpack --mode=production --watch",
     "setup": "npm i",
