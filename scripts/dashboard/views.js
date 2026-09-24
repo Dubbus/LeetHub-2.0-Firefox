@@ -99,6 +99,13 @@ function settingsPanel(ctx) {
     plan.map(p => h('option', { value: String(p.week), textContent: `Week ${p.week} · ${p.phase}` }))
   );
   position.value = String(settings.focusOverride || '');
+  const dayStart = h(
+    'select',
+    { onchange: e => onSettings('tracker_day_start_hour', Number(e.target.value)) },
+    h('option', { value: '0', textContent: 'Off (midnight)' }),
+    [1, 2, 3, 4, 5, 6].map(n => h('option', { value: String(n), textContent: `${n} AM` }))
+  );
+  dayStart.value = String(settings.dayStartHour || 0);
 
   return h(
     'details',
@@ -109,12 +116,18 @@ function settingsPanel(ctx) {
       { class: 'row', style: 'margin-top:10px;gap:18px' },
       labelled('Problems per day', number(settings.sessionSize, 1, 30, 1, 'tracker_session_size')),
       labelled('Move to the next week at', number(settings.advancePct, 10, 100, 5, 'tracker_advance_pct'), '% solved'),
-      labelled('Plan position', position)
+      labelled('Plan position', position),
+      labelled('Late-night mode: new day starts at', dayStart)
     ),
     h('p', {
       class: 'muted',
       textContent:
         'Your plan position follows what you have solved, not the calendar, so falling behind never skips material. Every due review is always shown — only new problems are rationed per day.',
+    }),
+    h('p', {
+      class: 'muted',
+      textContent:
+        'Late-night mode: if you study past midnight, anything before the chosen hour still counts as the previous day — no new reviews come due, no fresh batch of new problems, and attempts you log are dated the day before.',
     })
   );
 }
@@ -134,9 +147,12 @@ export function todayView(ctx) {
   // Reviews: always all of them, so nothing gets buried behind a cap. New problems: rationed per day.
   const reviewsToday = due;
   const nNew = settings.sessionSize;
-  const queue = nextNew(weeks, focus, nNew + 6, focusPattern);
-  const newToday = queue.slice(0, nNew);
-  const upNext = queue.slice(nNew);
+  // Problems you started today use up today's allowance, so finishing them doesn't pull in more.
+  const startedToday = [...groups.values()].filter(g => g.first === today).length;
+  const newLeft = Math.max(0, nNew - startedToday);
+  const queue = nextNew(weeks, focus, newLeft + 6, focusPattern);
+  const newToday = queue.slice(0, newLeft);
+  const upNext = queue.slice(newLeft);
 
   // Pace vs the calendar (informational only).
   const calWeek = weekOf(today, planStart);
@@ -225,7 +241,7 @@ export function todayView(ctx) {
       cal ? stat(`${cal.newCount} new · ${cal.reviewCount} review`, `this calendar week (week ${calWeek})`, null, true) : null
     ),
 
-    h('h2', { textContent: `Today’s session (${nNew + reviewsToday.length})` }),
+    h('h2', { textContent: `Today’s session (${newToday.length + reviewsToday.length} left)` }),
     rows.length === 0
       ? h('p', { class: 'muted', textContent: 'Nothing logged yet. Start with the new problems below; use the tracker widget on LeetCode to log them.' })
       : null,
@@ -235,11 +251,11 @@ export function todayView(ctx) {
       h(
         'div',
         {},
-        h('h3', { textContent: `New (${newToday.length})` }),
+        h('h3', { textContent: `New (${newToday.length}${startedToday ? ` left · ${startedToday} done today` : ''})` }),
         chips,
         newToday.length
           ? h('div', { class: 'card' }, h('ul', { class: 'queue' }, newToday.map(newItem)))
-          : emptyCard('Every problem in the plan is solved 🎉')
+          : emptyCard(queue.length ? 'Today’s new problems are done ✓ More tomorrow.' : 'Every problem in the plan is solved 🎉')
       ),
       h(
         'div',

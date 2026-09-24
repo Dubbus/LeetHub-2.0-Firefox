@@ -128,18 +128,21 @@ BrowserUtil.instance.storage.local.get('leethub_token', data => {
 });
 
 /* Interview tracker */
-const todayLocal = () => {
+// Late-night mode: before `dayStartHour` it is still the previous day (same as studyDay in trackerCsv.js).
+const todayLocal = (dayStartHour = 0) => {
   const d = new Date();
+  d.setHours(d.getHours() - (Number(dayStartHour) || 0));
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
     d.getDate()
   ).padStart(2, '0')}`;
 };
 
-BrowserUtil.instance.storage.local.get(['tracker_enabled', 'tracker_reviews'], data => {
+const TRACKER_KEYS = ['tracker_enabled', 'tracker_reviews', 'tracker_day_start_hour'];
+BrowserUtil.instance.storage.local.get(TRACKER_KEYS, data => {
   $('#tracker_enabled').prop('checked', data.tracker_enabled !== false);
 
   // Cached schedule is filtered by today's date here, so it never goes stale between LeetCode visits.
-  const today = todayLocal();
+  const today = todayLocal(data.tracker_day_start_hour);
   const due = (data.tracker_reviews || []).filter(r => r.next <= today);
   const list = $('#tracker_due').empty();
   if (due.length === 0) {

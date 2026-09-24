@@ -3,16 +3,18 @@
  * and renders Today / Attempts / Plan / Reference. `?demo` uses a bundled sample CSV, in-memory only,
  * so the page can be previewed without signing in or writing anything.
  */
-import { TRACKER_FILENAME, parseRows, toCsv, makeKeyer, importRows } from '../leetcode/trackerCsv';
+import { TRACKER_FILENAME, parseRows, toCsv, makeKeyer, importRows, studyDay } from '../leetcode/trackerCsv';
 import { getAuth, readCsv, writeCsv, PLAN_PROBLEMS } from '../leetcode/trackerStore';
 import { earliestDate } from './stats';
+import { progressReport } from './export';
 import { h, todayView, attemptsView, planView, referenceView, problemsView, editDialog } from './views';
 
-const DEFAULTS = { sessionSize: 5, advancePct: 80, focusOverride: '' };
+const DEFAULTS = { sessionSize: 5, advancePct: 80, focusOverride: '', dayStartHour: 0 };
 const SETTING_KEYS = {
   tracker_session_size: 'sessionSize',
   tracker_advance_pct: 'advancePct',
   tracker_focus_override: 'focusOverride',
+  tracker_day_start_hour: 'dayStartHour', // late-night mode; also read by the popup and the LeetCode form
 };
 const TABS = {
   today: todayView,
@@ -24,8 +26,8 @@ const TABS = {
 
 const demo = new URLSearchParams(window.location.search).has('demo');
 
-const localDay = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+/** The real date, shifted by late-night mode (before the day-start hour it is still yesterday). */
+const localDay = () => studyDay(new Date(), state.settings.dayStartHour);
 
 /* ---------- data source & settings ---------- */
 
@@ -121,6 +123,7 @@ function render() {
     },
   };
   renderDates();
+  $('export').onclick = () => exportReport(ctx);
   $('view').className = tab; // lets CSS widen the Attempts table
   $('view').replaceChildren(TABS[tab](ctx));
 }
@@ -159,6 +162,9 @@ function renderDates() {
     ...[
       h('label', { class: simulated ? 'simulated' : '' }, 'Today', todayInput),
       simulated ? h('span', { class: 'sim-note', textContent: 'simulated' }) : null,
+      !simulated && localDay() !== studyDay()
+        ? h('span', { class: 'sim-note', textContent: 'late night', title: 'Late-night mode: still counts as yesterday' })
+        : null,
       simulated ? h('button', { textContent: 'Reset', title: 'Back to the real date', onclick: () => setTodayOverride('') }) : null,
       h('label', {}, 'Plan start', planInput),
     ].filter(Boolean)
@@ -166,6 +172,16 @@ function renderDates() {
 }
 
 /* ---------- actions ---------- */
+
+function exportReport(ctx) {
+  const text = progressReport({ ...ctx, generatedAt: new Date() });
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const a = h('a', { href: url, download: `grithub-progress-${ctx.today}.txt` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 async function onSetting(key, value) {
   await backend.setSetting(key, value);
@@ -242,6 +258,7 @@ async function boot() {
       sessionSize: Number(settings.tracker_session_size) || DEFAULTS.sessionSize,
       advancePct: Number(settings.tracker_advance_pct) || DEFAULTS.advancePct,
       focusOverride: settings.tracker_focus_override || DEFAULTS.focusOverride,
+      dayStartHour: Number(settings.tracker_day_start_hour) || DEFAULTS.dayStartHour,
     };
     if (demo) banner('Demo mode: showing sample data. Nothing is saved.');
   } catch (err) {

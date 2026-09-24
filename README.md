@@ -76,11 +76,18 @@ GitHub repo, using the GitHub sign-in LeetHub already has. No extra setup.
 Popup → **Open dashboard** (or `dashboard.html?demo` to preview with sample data). It replaces the spreadsheet:
 
 - **Today**: every due review (no cap — nothing gets buried in a backlog), a plan position that follows your
-  progress (not the calendar), a daily target of new problems from the plan, and solved-problem stats.
+  progress (not the calendar), a daily allowance of new problems from the plan, and solved-problem stats.
+  Problems you start today count against the allowance, so finishing them doesn't pull in more.
+- **Late-night mode** (Today → settings): pick the hour your day starts (1-6 AM). Before then it still counts as
+  the previous day — no new reviews come due, no fresh batch of new problems, and attempts you log are dated the
+  day before. The popup's due list follows the same setting.
 - **Attempts**: every attempt with the workbook's computed columns (interval, next review, days until due, due flag).
   Only a problem's latest attempt is live; older attempts show as *superseded* instead of staying due forever. Click a row to edit or delete it.
 - **Problems**: the plan's problem list week by week, with your status, attempts and next review; filter by week, pattern or status.
 - **Plan / Reference**: the 8-week plan and problem list (auto-ticked from your attempts), pattern cheatsheet, Leitner guide.
+- **Export for AI (.txt)**: downloads your progress as plain text — summary, plan progress, per-pattern stats
+  (solve rate, hints, times, quality), activity, due reviews and the full attempt log with your notes and mistakes —
+  with a suggested prompt at the top. Paste it into an LLM for a grade and a plan for the next week.
 - **Import CSV**: bring in history exported from a spreadsheet-based tracker's Problem Tracker tab (dates, Excel serial dates and missing links are handled; duplicates are skipped).
 
 The CSV columns follow a typical "Problem Tracker" spreadsheet layout, so you can open `interview_tracker.csv` in

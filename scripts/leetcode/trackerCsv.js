@@ -275,6 +275,17 @@ function normalizeDate(input) {
   return ms === null || Number.isNaN(ms) ? '' : formatDay(ms);
 }
 
+/**
+ * The local 'YYYY-MM-DD' your study day falls on. Late-night mode: with `dayStartHour` = 4, anything
+ * before 4 AM still counts as the previous day, so a session past midnight neither pulls in tomorrow's
+ * reviews nor starts a fresh batch of new problems. 0 = days change at midnight.
+ */
+function studyDay(now = new Date(), dayStartHour = 0) {
+  const d = new Date(now.getTime());
+  d.setHours(d.getHours() - (Number(dayStartHour) || 0));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /** 1-based plan week containing `today`, or null if `planStart` isn't a valid date. */
 function weekOf(today, planStart) {
   const t = parseDay(today);
@@ -404,6 +415,7 @@ export {
   latestByProblem,
   parseDay,
   normalizeDate,
+  studyDay,
   weekOf,
   nextReview,
   reviewSchedule,

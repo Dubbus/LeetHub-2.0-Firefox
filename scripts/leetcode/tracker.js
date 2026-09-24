@@ -17,6 +17,7 @@ import {
   makeKeyer,
   dueReviews,
   nextReview,
+  studyDay,
   INTERVAL_DAYS,
 } from './trackerCsv';
 import {
@@ -114,12 +115,6 @@ const formatClock = ms => {
 };
 
 const toMinutes = ms => (ms == null ? '' : String(Math.round((ms / 60000) * 10) / 10));
-
-const localDay = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(
-    2,
-    '0'
-  )}`;
 
 /* ---------- timer persistence (per problem slug, survives reloads) ---------- */
 
@@ -357,7 +352,13 @@ function showForm(slug, info, { approachMs, totalMs }, { status: initialStatus, 
   if (!overlay.hidden) return; // already open
   frozenAt = freezeAt; // stop the widget's clock while the form is open
 
-  const date = inputEl(localDay());
+  const date = inputEl(studyDay());
+  // Late-night mode (dashboard setting): an attempt logged at 1 AM counts for the day before.
+  api()
+    .storage.local.get('tracker_day_start_hour')
+    .then(({ tracker_day_start_hour: hour }) => {
+      if (hour && date.value === studyDay()) date.value = studyDay(new Date(), hour);
+    });
   const lc = inputEl(info.lc);
   const name = inputEl(info.name);
   const pattern = selectEl(OPTIONS.pattern, info.pattern, { blank: true });

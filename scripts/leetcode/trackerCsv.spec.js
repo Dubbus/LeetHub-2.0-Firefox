@@ -11,6 +11,7 @@ import {
   makeKeyer,
   normalizeDate,
   weekOf,
+  studyDay,
   splitQueue,
   annotateAttempts,
   importRows,
@@ -221,5 +222,22 @@ describe('importRows (workbook Problem Tracker export)', () => {
   });
   test('tolerates a UTF-8 BOM', () => {
     expect(importRows('\uFEFF' + csv, [], PROBLEMS).rows).toHaveLength(2);
+  });
+});
+
+describe('studyDay (late-night mode)', () => {
+  const at = (day, hh, mm = 0) => new Date(`${day}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
+  test('off: the calendar date', () => {
+    expect(studyDay(at('2026-09-23', 1, 30))).toBe('2026-09-23');
+    expect(studyDay(at('2026-09-23', 1, 30), 0)).toBe('2026-09-23');
+  });
+  test('before the day-start hour it is still the previous day', () => {
+    expect(studyDay(at('2026-09-23', 1, 30), 4)).toBe('2026-09-22');
+    expect(studyDay(at('2026-09-23', 3, 59), 4)).toBe('2026-09-22');
+    expect(studyDay(at('2026-03-01', 2), '4')).toBe('2026-02-28');
+  });
+  test('from the day-start hour on it is today', () => {
+    expect(studyDay(at('2026-09-23', 4), 4)).toBe('2026-09-23');
+    expect(studyDay(at('2026-09-23', 23, 59), 4)).toBe('2026-09-23');
   });
 });
